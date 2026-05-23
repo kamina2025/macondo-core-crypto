@@ -1,42 +1,30 @@
 /**
  * PROYECTO MACONDO: NÚCLEO DE SEGURIDAD DIGITAL CRIPTOGRÁFICA
- * Motor universal e integrable (Corregido para importación asíncrona)
+ * Motor universal e integrable - Versión 100% Local y Soberana
  */
 
-const OPENPGP_CDN = 'https://unpkg.com/openpgp@5.11.0/dist/openpgp.min.js';
-
-async function asegurarOpenPGP() {
-    // Si ya fue inyectado globalmente, lo usamos
-    if (window.openpgp && typeof window.openpgp.generateKey === 'function') {
-        return window.openpgp;
-    }
-    try {
-        const modulo = await import(OPENPGP_CDN);
-        
-        // Corrección táctica: algunos entornos anidan el motor dentro de modulo.default o modulo directamente
-        const motorReal = modulo.generateKey ? modulo : (modulo.default || window.openpgp);
-        
-        if (!motorReal || typeof motorReal.generateKey !== 'function') {
-            throw new Error("El objeto cargado no contiene las funciones criptográficas de OpenPGP.");
-        }
-        
-        window.openpgp = motorReal;
-        return motorReal;
-    } catch (error) {
-        console.error("🔴 [CRÍTICO] Error al estructurar el motor OpenPGP desde el CDN:", error);
-        throw error;
-    }
-}
+// Importamos la librería directamente desde nuestra propia carpeta src
+import './openpgp.min.js';
 
 export const MacondoCrypto = {
     
+    /**
+     * RITO DE FORJA: Genera llaves universales en la RAM de forma local.
+     */
     async forjarIdentidad(alias, frasePaso) {
-        const openpgp = await asegurarOpenPGP();
         try {
-            console.log(`✨ Iniciando Rito de Forja para el custodio: ${alias}...`);
-            const { privateKey, publicKey } = await openpgp.generateKey({
+            console.log(`✨ Iniciando Rito de Forja Local para el custodio: ${alias}...`);
+            
+            // Al importar el script local, 'openpgp' se inyecta directamente en el objeto global del navegador
+            const pgp = window.openpgp;
+            
+            if (!pgp || typeof pgp.generateKey !== 'function') {
+                throw new Error("El motor local OpenPGP no se ha inicializado correctamente en window.");
+            }
+
+            const { privateKey, publicKey } = await pgp.generateKey({
                 type: 'ecc', 
-                curve: 'ed25519',
+                curve: 'ed25519', // Curva rápida y ligera ideal para hardware humilde
                 userIDs: [{ name: alias }],
                 passphrase: frasePaso
             });
@@ -46,21 +34,24 @@ export const MacondoCrypto = {
                 encryptedPrivateKey: privateKey
             };
         } catch (error) {
-            console.error("[!] Error en el Rito de Forja:", error);
+            console.error("[!] Error en el Rito de Forja Local:", error);
             throw error;
         }
     },
 
+    /**
+     * FIRMA DE ACCIÓN: Firma digitalmente una cadena de texto localmente.
+     */
     async firmarAccion(datosTexto, llavePrivadaArmadura, frasePaso) {
-        const openpgp = await asegurarOpenPGP();
         try {
-            const privateKey = await openpgp.decryptKey({
-                privateKey: await openpgp.readKey({ armoredKey: llavePrivadaArmadura }),
+            const pgp = window.openpgp;
+            const privateKey = await pgp.decryptKey({
+                privateKey: await pgp.readKey({ armoredKey: llavePrivadaArmadura }),
                 passphrase: frasePaso
             });
 
-            const message = await openpgp.createMessage({ text: datosTexto });
-            const signature = await openpgp.sign({
+            const message = await pgp.createMessage({ text: datosTexto });
+            const signature = await pgp.sign({
                 message,
                 signingKeys: privateKey,
                 detached: true
@@ -68,19 +59,22 @@ export const MacondoCrypto = {
 
             return signature;
         } catch (error) {
-            console.error("[!] Error al firmar los datos de acción:", error);
+            console.error("[!] Error al firmar los datos locales:", error);
             throw error;
         }
     },
 
+    /**
+     * VALIDACIÓN SOBERANA: Verifica firmas digitales sin salir del cliente.
+     */
     async verificarIntegridad(datosTexto, firmaArmadura, llavePublicaTexto) {
-        const openpgp = await asegurarOpenPGP();
         try {
-            const publicKey = await openpgp.readKey({ armoredKey: llavePublicaTexto });
-            const signature = await openpgp.readSignature({ armoredSignature: firmaArmadura });
-            const message = await openpgp.createMessage({ text: datosTexto });
+            const pgp = window.openpgp;
+            const publicKey = await pgp.readKey({ armoredKey: llavePublicaTexto });
+            const signature = await pgp.readSignature({ armoredSignature: firmaArmadura });
+            const message = await pgp.createMessage({ text: datosTexto });
 
-            const verificationResult = await openpgp.verify({
+            const verificationResult = await pgp.verify({
                 message,
                 signature,
                 verificationKeys: publicKey
@@ -90,21 +84,15 @@ export const MacondoCrypto = {
             const estaVerificado = await signatures[0].verified;
 
             if (estaVerificado) {
-                console.log("🟢 [VERIFICADO] Firma legítima. Integridad confirmada matemáticamente.");
+                console.log("🟢 [VERIFICADO] Firma legítima confirmada localmente.");
                 return true;
             } else {
-                console.warn("🔴 [ALERTA] La firma NO coincide. Datos adulterados detectados.");
+                console.warn("🔴 [ALERTA] La firma NO coincide.");
                 return false;
             }
         } catch (error) {
-            console.error("[!] Error durante la verificación criptográfica:", error);
+            console.error("[!] Error en verificación local:", error);
             return false;
         }
-    },
-
-    async validarInvitacion(cedulaNodal, llavePublicaPadre) {
-        const datosA_Verificar = cedulaNodal.metadata.alias_custodio + cedulaNodal.metadata.fecha_forja;
-        const firmaPadre = cedulaNodal.red_de_confianza.firma_custodio_maestro;
-        return await this.verificarIntegridad(datosA_Verificar, firmaPadre, llavePublicaPadre);
     }
 };
