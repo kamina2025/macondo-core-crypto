@@ -1,109 +1,170 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Macondo Core - Forja de Cédula</title>
-    <style>
-        body { background: #0a0f0d; color: #39ff14; font-family: 'Courier New', monospace; padding: 20px; }
-        .terminal { border: 1px solid #39ff14; padding: 25px; background: #020504; box-shadow: 0 0 15px rgba(57,255,20,0.15); max-width: 650px; margin: 0 auto; }
-        .form-group { margin-bottom: 15px; }
-        label { color: #00ffcc; display: block; margin-bottom: 5px; }
-        input[type="text"], input[type="password"] { background: #111; color: #39ff14; border: 1px solid #39ff14; padding: 8px; font-family: monospace; width: 95%; }
-        button { background: #111; color: #39ff14; border: 1px solid #39ff14; padding: 12px 24px; cursor: pointer; font-family: monospace; width: 100%; font-size: 1rem; }
-        button:hover { background: #39ff14; color: #000; font-weight: bold; }
-        .btn-back { background: transparent; color: #888; border: none; text-decoration: underline; cursor: pointer; display: inline-block; margin-bottom: 15px; }
-        .btn-back:hover { color: #39ff14; }
-        textarea { width: 95%; height: 120px; background: #111; color: #39ff14; border: 1px solid #222; font-family: monospace; margin-top: 10px; resize: none; }
-    </style>
-</head>
-<body>
-
-    <div class="terminal">
-        <a href="index.html" class="btn-back">← Volver al Menú Central</a>
-        <h2>[ RITO DE FORJA INITIAL ]</h2>
-        <p>Establece tus credenciales para registrar tu nodo en el rango de <strong>Iniciado</strong>.</p>
-        <hr style="border-color: #222;">
-
-        <div class="form-group">
-            <label>Alias del Custodio:</label>
-            <input type="text" id="alias" placeholder="Ej: Juan_Miranda">
-        </div>
-        
-        <div class="form-group">
-            <label>Frase de Acceso Local (Contraseña de Llave Privada):</label>
-            <input type="password" id="passphrase" placeholder="Mínimo 8 caracteres para blindaje">
-        </div>
-
-        <button id="btnEjecutarForja">FORJAR CÉDULA NODAL (.JSON)</button>
-
-        <hr style="border-color: #222; margin-top: 20px;">
-        <label>Previsualización de la Cédula Generada:</label>
-        <textarea id="previewCedula" readonly placeholder="Los datos estructurados aparecerán aquí al forjar..."></textarea>
-    </div>
-
-    <!-- Carga de librerías locales -->
-    <script src="../src/openpgp.min.js"></script>
-    <script type="module">
-        import { MacondoCrypto } from '../src/macondo-crypto.js';
-
-        document.getElementById('btnEjecutarForja').addEventListener('click', async () => {
-            const alias = document.getElementById('alias').value.trim();
-            const pass = document.getElementById('passphrase').value;
-            const preview = document.getElementById('previewCedula');
-
-            if (!alias || pass.length < 8) {
-                alert("🔴 Error: El alias no puede estar vacío y la frase de acceso debe tener mínimo 8 caracteres.");
-                return;
+    <head>
+        <meta charset="UTF-8" />
+        <title>Macondo Core - Forja de Cédula</title>
+        <style>
+            body {
+                background: #0a0f0d;
+                color: #39ff14;
+                font-family: "Courier New", monospace;
+                padding: 20px;
             }
-
-            preview.value = "⏳ Forjando llaves de curva elíptica de forma local y soberana...\nPor favor, espera un momento.";
-
-            try {
-                // 1. Ejecutar el rito de forja en RAM
-                const llaves = await MacondoCrypto.forjarIdentidad(alias, pass);
-
-                // 2. Construir la Cédula Nodal Estándar bajo la especificación de Macondo
-                const cedulaIniciado = {
-                    "$schema": "https://json-schema.org/draft/2020-12/schema",
-                    "title": "CedulaNodalEvolutiva",
-                    "version": "2.0.0",
-                    "metadata": {
-                        "alias_custodio": alias,
-                        "rango_actual": "Iniciado",
-                        "generacion_actual": 1
-                    },
-                    "certificado_actual": {
-                        "fecha_forja": new Date().toISOString(),
-                        "pgp_public_key": llaves.publicKey,
-                        "pgp_encrypted_private_key": llaves.encryptedPrivateKey
-                    },
-                    "linaje_generacional": [],
-                    "autorizaciones": {
-                        "firma_oficial_validador": ""
-                    }
-                };
-
-                // 3. Mostrar previsualización estructurada en la pantalla del laboratorio
-                const jsonString = JSON.stringify(cedulaIniciado, null, 2);
-                preview.value = jsonString;
-
-                // 4. Mecanismo de descarga automática segura (No toca el servidor)
-                const blob = new Blob([jsonString], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `cedula_${alias}_iniciado.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                console.log(`🟢 Cédula descargada con éxito para el nodo: ${alias}`);
-
-            } catch (err) {
-                preview.value = `❌ Ocurrió un error en la forjacriptográfica:\n${err.message}`;
+            .terminal {
+                border: 1px solid #39ff14;
+                padding: 25px;
+                background: #020504;
+                box-shadow: 0 0 15px rgba(57, 255, 20, 0.15);
+                max-width: 650px;
+                margin: 0 auto;
             }
-        });
-    </script>
-</body>
+            .form-group {
+                margin-bottom: 15px;
+            }
+            label {
+                color: #00ffcc;
+                display: block;
+                margin-bottom: 5px;
+            }
+            input[type="text"],
+            input[type="password"] {
+                background: #111;
+                color: #39ff14;
+                border: 1px solid #39ff14;
+                padding: 8px;
+                font-family: monospace;
+                width: 95%;
+            }
+            button {
+                background: #111;
+                color: #39ff14;
+                border: 1px solid #39ff14;
+                padding: 12px 24px;
+                cursor: pointer;
+                font-family: monospace;
+                width: 100%;
+                font-size: 1rem;
+            }
+            button:hover {
+                background: #39ff14;
+                color: #000;
+                font-weight: bold;
+            }
+            .btn-back {
+                background: transparent;
+                color: #888;
+                border: none;
+                text-decoration: underline;
+                cursor: pointer;
+                display: inline-block;
+                margin-bottom: 15px;
+            }
+            .btn-back:hover {
+                color: #39ff14;
+            }
+            textarea {
+                width: 95%;
+                height: 120px;
+                background: #111;
+                color: #39ff14;
+                border: 1px solid #222;
+                font-family: monospace;
+                margin-top: 10px;
+                resize: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="terminal">
+            <a href="index.html" class="btn-back">← Volver al Menú Central</a>
+            <h2>[ RITO DE FORJA INITIAL ]</h2>
+            <p>Establece tus credenciales para registrar tu nodo en el rango de <strong>Iniciado</strong>.</p>
+            <hr style="border-color: #222" />
+
+            <div class="form-group">
+                <label>Alias del Custodio:</label>
+                <input type="text" id="alias" placeholder="Ej: Juan_Miranda" />
+            </div>
+
+            <div class="form-group">
+                <label>Frase de Acceso Local (Contraseña de Llave Privada):</label>
+                <input type="password" id="passphrase" placeholder="Mínimo 8 caracteres para blindaje" />
+            </div>
+
+            <button id="btnEjecutarForja">FORJAR CÉDULA NODAL (.JSON)</button>
+
+            <hr style="border-color: #222; margin-top: 20px" />
+            <label>Previsualización de la Cédula Generada:</label>
+            <textarea
+                id="previewCedula"
+                readonly
+                placeholder="Los datos estructurados aparecerán aquí al forjar..."></textarea>
+        </div>
+
+        <!-- Carga de librerías locales -->
+        <script src="../src/openpgp.min.js"></script>
+        <script type="module">
+            import { MacondoCrypto } from "../src/macondo-crypto.js?v=2";
+            document.getElementById("btnEjecutarForja").addEventListener("click", async () => {
+                const alias = document.getElementById("alias").value.trim();
+                const pass = document.getElementById("passphrase").value;
+                const preview = document.getElementById("previewCedula");
+
+                if (!alias || pass.length < 8) {
+                    alert(
+                        "🔴 Error: El alias no puede estar vacío y la frase de acceso debe tener mínimo 8 caracteres."
+                    );
+                    return;
+                }
+
+                preview.value =
+                    "⏳ Forjando llaves de curva elíptica de forma local y soberana...\nPor favor, espera un momento.";
+
+                try {
+                    // 1. Ejecutar el rito de forja en RAM
+                    const llaves = await MacondoCrypto.forjarIdentidad(alias, pass);
+
+                    // 2. Construir la Cédula Nodal Estándar bajo la especificación de Macondo
+                    const cedulaIniciado = {
+                        $schema: "https://json-schema.org/draft/2020-12/schema",
+                        title: "CedulaNodalEvolutiva",
+                        version: "2.0.0",
+                        metadata: {
+                            alias_custodio: alias,
+                            rango_actual: "Iniciado",
+                            generacion_actual: 1
+                        },
+                        certificado_actual: {
+                            fecha_forja: new Date().toISOString(),
+                            pgp_public_key: llaves.publicKey,
+                            pgp_encrypted_private_key: llaves.encryptedPrivateKey
+                        },
+                        linaje_generacional: [],
+                        autorizaciones: {
+                            firma_oficial_validador: ""
+                        }
+                    };
+
+                    // 3. Mostrar previsualización estructurada en la pantalla del laboratorio
+                    const jsonString = JSON.stringify(cedulaIniciado, null, 2);
+                    preview.value = jsonString;
+
+                    // 4. Mecanismo de descarga automática segura (No toca el servidor)
+                    const blob = new Blob([jsonString], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `cedula_${alias}_iniciado.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    console.log(`🟢 Cédula descargada con éxito para el nodo: ${alias}`);
+                } catch (err) {
+                    preview.value = `❌ Ocurrió un error en la forjacriptográfica:\n${err.message}`;
+                }
+            });
+        </script>
+    </body>
 </html>

@@ -1,177 +1,253 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Macondo Core - Altar de Ascenso</title>
-    <style>
-        body { background: #0a0f0d; color: #39ff14; font-family: 'Courier New', monospace; padding: 20px; }
-        .terminal { border: 1px solid #39ff14; padding: 25px; background: #020504; box-shadow: 0 0 15px rgba(57,255,20,0.15); max-width: 750px; margin: 0 auto; }
-        .panel-carga { border: 1px dashed #39ff14; padding: 15px; background: #050a07; margin-bottom: 20px; }
-        .panel-carga h3 { margin-top: 0; color: #00ffcc; }
-        input[type="file"] { background: #111; color: #39ff14; padding: 10px; width: 90%; border: 1px solid #222; font-family: monospace; }
-        input[type="password"] { background: #111; color: #39ff14; border: 1px solid #39ff14; padding: 5px; font-family: monospace; width: 250px; }
-        button { background: #111; color: #39ff14; border: 1px solid #00ffcc; padding: 15px; cursor: pointer; font-family: monospace; width: 100%; font-size: 1.1rem; font-weight: bold; }
-        button:hover { background: #00ffcc; color: #000; box-shadow: 0 0 15px rgba(0,255,204,0.4); }
-        .btn-back { background: transparent; color: #888; border: none; text-decoration: underline; cursor: pointer; display: inline-block; margin-bottom: 15px; }
-        .btn-back:hover { color: #39ff14; }
-        .status-box { background: #111; padding: 10px; border-left: 3px solid #39ff14; font-size: 0.9rem; margin-top: 15px; }
-    </style>
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Macondo Core - Altar de Ascenso</title>
+        <style>
+            body {
+                background: #0a0f0d;
+                color: #39ff14;
+                font-family: "Courier New", monospace;
+                padding: 20px;
+            }
+            .terminal {
+                border: 1px solid #39ff14;
+                padding: 25px;
+                background: #020504;
+                box-shadow: 0 0 15px rgba(57, 255, 20, 0.15);
+                max-width: 750px;
+                margin: 0 auto;
+            }
+            .panel-carga {
+                border: 1px dashed #39ff14;
+                padding: 15px;
+                background: #050a07;
+                margin-bottom: 20px;
+            }
+            .panel-carga h3 {
+                margin-top: 0;
+                color: #00ffcc;
+            }
+            input[type="file"] {
+                background: #111;
+                color: #39ff14;
+                padding: 10px;
+                width: 90%;
+                border: 1px solid #222;
+                font-family: monospace;
+            }
+            input[type="password"] {
+                background: #111;
+                color: #39ff14;
+                border: 1px solid #39ff14;
+                padding: 5px;
+                font-family: monospace;
+                width: 250px;
+            }
+            button {
+                background: #111;
+                color: #39ff14;
+                border: 1px solid #00ffcc;
+                padding: 15px;
+                cursor: pointer;
+                font-family: monospace;
+                width: 100%;
+                font-size: 1.1rem;
+                font-weight: bold;
+            }
+            button:hover {
+                background: #00ffcc;
+                color: #000;
+                box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            }
+            .btn-back {
+                background: transparent;
+                color: #888;
+                border: none;
+                text-decoration: underline;
+                cursor: pointer;
+                display: inline-block;
+                margin-bottom: 15px;
+            }
+            .btn-back:hover {
+                color: #39ff14;
+            }
+            .status-box {
+                background: #111;
+                padding: 10px;
+                border-left: 3px solid #39ff14;
+                font-size: 0.9rem;
+                margin-top: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="terminal">
+            <a href="index.html" class="btn-back">← Volver al Menú Central</a>
+            <h2>[ ALTAR DE VALIDACIÓN Y ASCENSO ]</h2>
+            <p>
+                Mecanismo criptográfico para certificar la evolución de un nodo hacia el rango de
+                <strong>Aprendiz</strong>.
+            </p>
+            <hr style="border-color: #222; margin-bottom: 20px" />
 
-    <div class="terminal">
-        <a href="index.html" class="btn-back">← Volver al Menú Central</a>
-        <h2>[ ALTAR DE VALIDACIÓN Y ASCENSO ]</h2>
-        <p>Mecanismo criptográfico para certificar la evolución de un nodo hacia el rango de <strong>Aprendiz</strong>.</p>
-        <hr style="border-color: #222; margin-bottom: 20px;">
+            <!-- SECCIÓN 1: CÉDULA DEL INICIADO -->
+            <div class="panel-carga">
+                <h3>1. Cédula del Aspirante (Iniciado)</h3>
+                <p>Sube el archivo JSON de la identidad que va a recibir el ascenso generacional:</p>
+                <input type="file" id="fileIniciado" accept=".json" />
+                <div id="infoIniciado" class="status-box" style="display: none"></div>
+            </div>
 
-        <!-- SECCIÓN 1: CÉDULA DEL INICIADO -->
-        <div class="panel-carga">
-            <h3>1. Cédula del Aspirante (Iniciado)</h3>
-            <p>Sube el archivo JSON de la identidad que va a recibir el ascenso generacional:</p>
-            <input type="file" id="fileIniciado" accept=".json">
-            <div id="infoIniciado" class="status-box" style="display:none;"></div>
+            <!-- SECCIÓN 2: CÉDULA DEL AUTORIZADOR -->
+            <div class="panel-carga">
+                <h3>2. Cédula del Validador (Oficial o Maestro)</h3>
+                <p>Sube la cédula con autoridad vigente encargada de firmar la transición del linaje:</p>
+                <input type="file" id="fileValidador" accept=".json" /><br /><br />
+                <label>Frase de Acceso del Validador:</label><br />
+                <input type="password" id="passValidador" placeholder="Contraseña de su llave privada" />
+                <div id="infoValidador" class="status-box" style="display: none"></div>
+            </div>
+
+            <!-- ACCIÓN DE FIRMA CRIPTOGRÁFICA -->
+            <button id="btnFirmarAscenso">⚙️ EJECUTAR FIRMA DE ASCENSO A APRENDIZ</button>
+
+            <div id="logConsola" class="status-box" style="margin-top: 20px; border-color: #00ffcc">
+                🪵 Consola del Altar: Esperando la carga de los certificados correspondientes...
+            </div>
         </div>
 
-        <!-- SECCIÓN 2: CÉDULA DEL AUTORIZADOR -->
-        <div class="panel-carga">
-            <h3>2. Cédula del Validador (Oficial o Maestro)</h3>
-            <p>Sube la cédula con autoridad vigente encargada de firmar la transición del linaje:</p>
-            <input type="file" id="fileValidador" accept=".json"><br><br>
-            <label>Frase de Acceso del Validador:</label><br>
-            <input type="password" id="passValidador" placeholder="Contraseña de su llave privada">
-            <div id="infoValidador" class="status-box" style="display:none;"></div>
-        </div>
+        <!-- Carga de librerías locales -->
+        <script src="../src/openpgp.min.js"></script>
+        <script type="module">
+            import { MacondoCrypto } from "../src/macondo-crypto.js?v=2";
+            // Variables globales en RAM para retener los objetos cargados
+            let datosIniciado = null;
+            let datosValidador = null;
 
-        <!-- ACCIÓN DE FIRMA CRIPTOGRÁFICA -->
-        <button id="btnFirmarAscenso">⚙️ EJECUTAR FIRMA DE ASCENSO A APRENDIZ</button>
+            const log = (texto, esError = false) => {
+                const consola = document.getElementById("logConsola");
+                consola.style.borderColor = esError ? "#ff3333" : "#00ffcc";
+                consola.innerHTML = esError ? `❌ ${texto}` : `🪵 ${texto}`;
+            };
 
-        <div id="logConsola" class="status-box" style="margin-top:20px; border-color: #00ffcc;">
-            🪵 Consola del Altar: Esperando la carga de los certificados correspondientes...
-        </div>
-    </div>
+            // Función auxiliar para leer archivos locales .json de forma asíncrona
+            const procesarArchivo = (elementoInput, elementoInfo, callbackAsignacion) => {
+                elementoInput.addEventListener("change", (e) => {
+                    const archivo = e.target.files[0];
+                    if (!archivo) return;
 
-    <!-- Carga de librerías locales -->
-    <script src="../src/openpgp.min.js"></script>
-   <script type="module">
-        import { MacondoCrypto } from '../src/macondo-crypto.js';
+                    const lector = new FileReader();
+                    lector.onload = (evento) => {
+                        try {
+                            const jsonParsed = JSON.parse(evento.target.result);
+                            callbackAsignacion(jsonParsed);
 
-        // Variables globales en RAM para retener los objetos cargados
-        let datosIniciado = null;
-        let datosValidador = null;
-
-        const log = (texto, esError = false) => {
-            const consola = document.getElementById('logConsola');
-            consola.style.borderColor = esError ? "#ff3333" : "#00ffcc";
-            consola.innerHTML = esError ? `❌ ${texto}` : `🪵 ${texto}`;
-        };
-
-        // Función auxiliar para leer archivos locales .json de forma asíncrona
-        const procesarArchivo = (elementoInput, elementoInfo, callbackAsignacion) => {
-            elementoInput.addEventListener('change', (e) => {
-                const archivo = e.target.files[0];
-                if (!archivo) return;
-
-                const lector = new FileReader();
-                lector.onload = (evento) => {
-                    try {
-                        const jsonParsed = JSON.parse(evento.target.result);
-                        callbackAsignacion(jsonParsed);
-                        
-                        elementoInfo.style.display = "block";
-                        elementoInfo.innerHTML = `<strong>Nodo:</strong> ${jsonParsed.metadata.alias_custodio}<br>
+                            elementoInfo.style.display = "block";
+                            elementoInfo.innerHTML = `<strong>Nodo:</strong> ${jsonParsed.metadata.alias_custodio}<br>
                                                   <strong>Rango Actual:</strong> ${jsonParsed.metadata.rango_actual}<br>
                                                   <strong>Generación:</strong> ${jsonParsed.metadata.generacion_actual}`;
-                        log(`Archivo de ${jsonParsed.metadata.alias_custodio} cargado en memoria RAM.`);
-                    } catch (err) {
-                        log("El archivo seleccionado no es un JSON válido de Macondo.", true);
-                    }
-                };
-                lector.readAsText(archivo);
+                            log(`Archivo de ${jsonParsed.metadata.alias_custodio} cargado en memoria RAM.`);
+                        } catch (err) {
+                            log("El archivo seleccionado no es un JSON válido de Macondo.", true);
+                        }
+                    };
+                    lector.readAsText(archivo);
+                });
+            };
+
+            // Vincular los lectores a las zonas de carga del Altar
+            procesarArchivo(
+                document.getElementById("fileIniciado"),
+                document.getElementById("infoIniciado"),
+                (json) => {
+                    datosIniciado = json;
+                }
+            );
+            procesarArchivo(
+                document.getElementById("fileValidador"),
+                document.getElementById("infoValidador"),
+                (json) => {
+                    datosValidador = json;
+                }
+            );
+
+            // Ejecución Criptográfica del Rito de Ascenso
+            document.getElementById("btnFirmarAscenso").addEventListener("click", async () => {
+                const claveValidador = document.getElementById("passValidador").value;
+
+                if (!datosIniciado || !datosValidador) {
+                    log("Faltan certificados. Se requieren ambas cédulas para consumar el rito.", true);
+                    return;
+                }
+                if (!claveValidador) {
+                    log("Se requiere la frase de acceso del Validador para desbloquear su firma privada.", true);
+                    return;
+                }
+
+                log("⛓️ Iniciando transición de linaje criptográfico... Procesando en RAM.");
+
+                try {
+                    // 1. Preparar los datos que la autoridad va a certificar
+                    const manifiestoAscenso = {
+                        aspirante: datosIniciado.metadata.alias_custodio,
+                        nuevo_rango: "Aprendiz",
+                        generacion_origen: datosIniciado.metadata.generacion_actual,
+                        llave_publica_aspirante: datosIniciado.certificado_actual.pgp_public_key,
+                        autorizador: datosValidador.metadata.alias_custodio,
+                        rango_autorizador: datosValidador.metadata.rango_actual,
+                        fecha_firmado: new Date().toISOString()
+                    };
+
+                    const textoA_Firmar = JSON.stringify(manifiestoAscenso);
+
+                    // 2. Ejecutar la firma digital con la llave privada encriptada del Oficial/Maestro
+                    log("🔒 Desencriptando llave del validador y aplicando firma PGP desprendida...");
+                    const firmaGeneracional = await MacondoCrypto.firmarAccion(
+                        textoA_Firmar,
+                        datosValidador.certificado_actual.pgp_encrypted_private_key,
+                        claveValidador
+                    );
+
+                    // 3. Mutar la estructura de la Cédula del Iniciado al rango de Aprendiz (Generación 2)
+                    const nuevaCedulaAprendiz = JSON.parse(JSON.stringify(datosIniciado)); // Clonación limpia
+
+                    // Archivar la identidad de Iniciado en el historial de linaje pasado
+                    const eslabonHistorico = {
+                        generacion: datosIniciado.metadata.generacion_actual,
+                        rango: datosIniciado.metadata.rango_actual,
+                        fecha_forja: datosIniciado.certificado_actual.fecha_forja,
+                        pgp_public_key: datosIniciado.certificado_actual.pgp_public_key,
+                        firma_de_ascenso: "Auto-forjada al inicio"
+                    };
+
+                    nuevaCedulaAprendiz.metadata.rango_actual = "Aprendiz";
+                    nuevaCedulaAprendiz.metadata.generacion_actual = 2;
+                    nuevaCedulaAprendiz.certificado_actual.fecha_forja = manifiestoAscenso.fecha_firmado;
+
+                    // Guardamos el registro del validador y su estampa matemática en la red de confianza
+                    nuevaCedulaAprendiz.autorizaciones.firma_oficial_validador = firmaGeneracional;
+                    nuevaCedulaAprendiz.linaje_generacional.push(eslabonHistorico);
+
+                    log("🟢 [ÉXITO CRIPTOGRÁFICO] Ascenso firmado. Preparando descarga del nuevo archivo...");
+
+                    // 4. Descargar la Cédula de Aprendiz actualizada
+                    const jsonString = JSON.stringify(nuevaCedulaAprendiz, null, 2);
+                    const blob = new Blob([jsonString], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `cedula_${nuevaCedulaAprendiz.metadata.alias_custodio}_aprendiz.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    log("🟢 Proceso culminado. Cédula evolutiva de Rango Aprendiz descargada de forma segura.");
+                } catch (error) {
+                    log(`Fallo en el rito de firma: ${error.message}`, true);
+                }
             });
-        };
-
-        // Vincular los lectores a las zonas de carga del Altar
-        procesarArchivo(document.getElementById('fileIniciado'), document.getElementById('infoIniciado'), (json) => { datosIniciado = json; });
-        procesarArchivo(document.getElementById('fileValidador'), document.getElementById('infoValidador'), (json) => { datosValidador = json; });
-
-        // Ejecución Criptográfica del Rito de Ascenso
-        document.getElementById('btnFirmarAscenso').addEventListener('click', async () => {
-            const claveValidador = document.getElementById('passValidador').value;
-
-            if (!datosIniciado || !datosValidador) {
-                log("Faltan certificados. Se requieren ambas cédulas para consumar el rito.", true);
-                return;
-            }
-            if (!claveValidador) {
-                log("Se requiere la frase de acceso del Validador para desbloquear su firma privada.", true);
-                return;
-            }
-
-            log("⛓️ Iniciando transición de linaje criptográfico... Procesando en RAM.");
-
-            try {
-                // 1. Preparar los datos que la autoridad va a certificar
-                const manifiestoAscenso = {
-                    aspirante: datosIniciado.metadata.alias_custodio,
-                    nuevo_rango: "Aprendiz",
-                    generacion_origen: datosIniciado.metadata.generacion_actual,
-                    llave_publica_aspirante: datosIniciado.certificado_actual.pgp_public_key,
-                    autorizador: datosValidador.metadata.alias_custodio,
-                    rango_autorizador: datosValidador.metadata.rango_actual,
-                    fecha_firmado: new Date().toISOString()
-                };
-
-                const textoA_Firmar = JSON.stringify(manifiestoAscenso);
-
-                // 2. Ejecutar la firma digital con la llave privada encriptada del Oficial/Maestro
-                log("🔒 Desencriptando llave del validador y aplicando firma PGP desprendida...");
-                const firmaGeneracional = await MacondoCrypto.firmarAccion(
-                    textoA_Firmar,
-                    datosValidador.certificado_actual.pgp_encrypted_private_key,
-                    claveValidador
-                );
-
-                // 3. Mutar la estructura de la Cédula del Iniciado al rango de Aprendiz (Generación 2)
-                const nuevaCedulaAprendiz = JSON.parse(JSON.stringify(datosIniciado)); // Clonación limpia
-                
-                // Archivar la identidad de Iniciado en el historial de linaje pasado
-                const eslabonHistorico = {
-                    generacion: datosIniciado.metadata.generacion_actual,
-                    rango: datosIniciado.metadata.rango_actual,
-                    fecha_forja: datosIniciado.certificado_actual.fecha_forja,
-                    pgp_public_key: datosIniciado.certificado_actual.pgp_public_key,
-                    firma_de_ascenso: "Auto-forjada al inicio"
-                };
-
-                nuevaCedulaAprendiz.metadata.rango_actual = "Aprendiz";
-                nuevaCedulaAprendiz.metadata.generacion_actual = 2;
-                nuevaCedulaAprendiz.certificado_actual.fecha_forja = manifiestoAscenso.fecha_firmado;
-                
-                // Guardamos el registro del validador y su estampa matemática en la red de confianza
-                nuevaCedulaAprendiz.autorizaciones.firma_oficial_validador = firmaGeneracional;
-                nuevaCedulaAprendiz.linaje_generacional.push(eslabonHistorico);
-
-                log("🟢 [ÉXITO CRIPTOGRÁFICO] Ascenso firmado. Preparando descarga del nuevo archivo...");
-
-                // 4. Descargar la Cédula de Aprendiz actualizada
-                const jsonString = JSON.stringify(nuevaCedulaAprendiz, null, 2);
-                const blob = new Blob([jsonString], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `cedula_${nuevaCedulaAprendiz.metadata.alias_custodio}_aprendiz.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                log("🟢 Proceso culminado. Cédula evolutiva de Rango Aprendiz descargada de forma segura.");
-
-            } catch (error) {
-                log(`Fallo en el rito de firma: ${error.message}`, true);
-            }
-        });
-    </script>
-</body>
+        </script>
+    </body>
 </html>
