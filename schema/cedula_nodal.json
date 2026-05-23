@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CedulaNodalEvolutiva",
+  "version": "2.0.0",
+  "metadata": {
+    "alias_custodio": "Custodio_Miranda",
+    "rango_actual": "Oficial_Nodal",
+    "generacion_actual": 2
+  },
+  "certificado_actual": {
+    "fecha_forja": "2026-05-23T14:30:00Z",
+    "pgp_public_key": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...",
+    "pgp_encrypted_private_key": "-----BEGIN PGP PRIVATE KEY BLOCK-----\n..."
+  },
+  "linaje_generacional": [
+    {
+      "generacion": 1,
+      "rango": "Custodio_Aspirante",
+      "fecha_forja": "2026-02-12T09:00:00Z",
+      "pgp_public_key": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...",
+      "firma_de_ascenso": "-----BEGIN PGP SIGNATURE-----\n... (Firmado por el Maestro que autorizó el ascenso)"
+    }
+  ],
+  "autorizaciones": {
+    "firma_oficial_validador": "-----BEGIN PGP SIGNATURE-----\n..."
+  }
+}
