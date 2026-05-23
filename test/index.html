@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Macondo Core - Laboratorio Criptográfico</title>
+    <style>
+        body { background: #0a0f0d; color: #39ff14; font-family: 'Courier New', monospace; padding: 20px; }
+        .terminal { border: 1px solid #39ff14; padding: 20px; background: #020504; box-shadow: 0 0 15px rgba(57,255,20,0.2); max-width: 800px; margin: 0 auto; }
+        button { background: #111; color: #39ff14; border: 1px solid #39ff14; padding: 10px 20px; cursor: pointer; margin-top: 10px; font-family: monospace; }
+        button:hover { background: #39ff14; color: #000; }
+        textarea { width: 100%; height: 100px; background: #111; color: #00ffcc; border: 1px solid #00ffcc; font-family: monospace; margin-top: 5px; margin-bottom: 15px; resize: none; }
+        input[type="text"], input[type="password"] { background: #111; color: #39ff14; border: 1px solid #39ff14; padding: 5px; font-family: monospace; width: 250px; }
+        .success { color: #00ffcc; font-weight: bold; }
+        hr { border: 0; border-top: 1px dashed #39ff14; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="terminal">
+        <h2>[ PROYECTO MACONDO: LABORATORIO DE SEGURIDAD DIGITAL ]</h2>
+        <p>Entorno aislado para el prototipado de identidades soberanas universales.</p>
+        
+        <hr>
+        
+        <h3>1. Rito de Forja (Generación de Llaves en RAM)</h3>
+        <p>
+            <label>Alias del Custodio:</label><br>
+            <input type="text" id="alias" value="Custodio_Miranda">
+        </p>
+        <p>
+            <label>Frase de Paso (Contraseña Local):</label><br>
+            <input type="password" id="passphrase" value="clave_secreta_macondo">
+        </p>
+        <button id="btnForjar">Ejecutar Rito de Forja</button>
+        
+        <hr>
+        
+        <h3>2. Datos Obtenidos (Cédula Nodal Corriendo en RAM)</h3>
+        <label>Llave Pública (Para la Red de Confianza):</label>
+        <textarea id="pubKey" readonly placeholder="Esperando forja..."></textarea>
+        
+        <label>Llave Privada Encriptada (Soberanía del Cliente):</label>
+        <textarea id="privKey" readonly placeholder="Esperando forja..."></textarea>
+        
+        <div id="status"></div>
+    </div>
+
+    <script type="module">
+        import { MacondoCrypto } from '../src/macondo-crypto.js';
+
+        document.getElementById('btnForjar').addEventListener('click', async () => {
+            const alias = document.getElementById('alias').value;
+            const pass = document.getElementById('passphrase').value;
+            const statusDiv = document.getElementById('status');
+            
+            statusDiv.innerHTML = "<p>⏳ Forjando llaves matemáticas de curva elíptica en la RAM...</p>";
+            
+            try {
+                // Ejecutamos la lógica del motor central
+                const llaves = await MacondoCrypto.forjarIdentidad(alias, pass);
+                
+                document.getElementById('pubKey').value = llaves.publicKey;
+                document.getElementById('privKey').value = llaves.encryptedPrivateKey;
+                
+                // Inyección del token de sesión para simular la persistencia en Sinfonía
+                sessionStorage.setItem("macondo_session_token", btoa(llaves.publicKey.substring(0, 50)));
+                
+                statusDiv.innerHTML = `<p class="success">🟢 [ÉXITO] Identidad Nodal forjada. 'macondo_session_token' inyectado en la sesión de la RAM.</p>`;
+            } catch (err) {
+                statusDiv.innerHTML = `<p style="color: #ff3333;">❌ [ERROR EN FORJA]: ${err.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
