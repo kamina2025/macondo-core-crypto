@@ -4,7 +4,7 @@
  */
 
 // Importamos la librería directamente desde nuestra propia carpeta src
-import './openpgp.min.js';
+
 
 export const MacondoCrypto = {
     

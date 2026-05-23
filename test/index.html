@@ -45,6 +45,10 @@
         <div id="status"></div>
     </div>
 
+    <!-- 1. Cargamos primero la librería local de forma clásica para forzar su inyección en window.openpgp -->
+    <script src="../src/openpgp.min.js"></script>
+
+    <!-- 2. Cargamos nuestro motor modular de Macondo -->
     <script type="module">
         import { MacondoCrypto } from '../src/macondo-crypto.js';
 
@@ -53,7 +57,7 @@
             const pass = document.getElementById('passphrase').value;
             const statusDiv = document.getElementById('status');
             
-            statusDiv.innerHTML = "<p>⏳ Forjando llaves matemáticas de curva elíptica en la RAM...</p>";
+            statusDiv.innerHTML = "<p>⏳ Forjando llaves matemáticas de curva elíptica en la RAM local...</p>";
             
             try {
                 // Ejecutamos la lógica del motor central
@@ -62,10 +66,10 @@
                 document.getElementById('pubKey').value = llaves.publicKey;
                 document.getElementById('privKey').value = llaves.encryptedPrivateKey;
                 
-                // Inyección del token de sesión para simular la persistencia en Sinfonía
+                // Inyección del token de sesión en la memoria temporal del navegador
                 sessionStorage.setItem("macondo_session_token", btoa(llaves.publicKey.substring(0, 50)));
                 
-                statusDiv.innerHTML = `<p class="success">🟢 [ÉXITO] Identidad Nodal forjada. 'macondo_session_token' inyectado en la sesión de la RAM.</p>`;
+                statusDiv.innerHTML = `<p class="success">🟢 [ÉXITO] Identidad Nodal forjada de forma soberana. 'macondo_session_token' activo en RAM.</p>`;
             } catch (err) {
                 statusDiv.innerHTML = `<p style="color: #ff3333;">❌ [ERROR EN FORJA]: ${err.message}</p>`;
             }
