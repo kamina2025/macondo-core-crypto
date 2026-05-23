@@ -30,6 +30,9 @@ export const PerfilLogica = {
     /**
      * Ejecuta el rito de forja base (Iniciado) integrando los nuevos campos estructurados.
      */
+    /**
+     * Ejecuta el rito de forja base integrando la selección de rangos para simulación de laboratorios.
+     */
     async ejecutarForjaBase(alias, pass, datosFisicos, previewElement, statusBox) {
         if (!alias || pass.length < 8) {
             alert("🔴 Error: El alias no puede estar vacío y la frase de acceso debe tener mínimo 8 caracteres.");
@@ -41,14 +44,20 @@ export const PerfilLogica = {
         try {
             const llaves = await MacondoCrypto.forjarIdentidad(alias, pass);
 
+            // Capturamos el rango dinámico del selector del laboratorio
+            const rangoSimulado = document.getElementById("rangoSimulado")?.value || "Iniciado";
+            let genSimulada = 1;
+            if (rangoSimulado === "Oficial") genSimulada = 3;
+            if (rangoSimulado === "Maestro") genSimulada = 4;
+
             const nuevaCedula = {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 "title": "CedulaNodalEvolutiva",
                 "version": "2.0.0",
                 "metadata": {
                     "alias_custodio": alias,
-                    "rango_actual": "Iniciado",
-                    "generacion_actual": 1
+                    "rango_actual": rangoSimulado, // Rango dinámico inyectado
+                    "generacion_actual": genSimulada
                 },
                 "certificado_actual": {
                     "fecha_forja": new Date().toISOString(),
@@ -61,12 +70,18 @@ export const PerfilLogica = {
                     "almacenamiento_asignado_gb": datosFisicos.almacenamiento
                 },
                 "matriz_acceso_artefactos": {
-                    "sinfonia": { "rol": "Iniciado", "puede_subir_magnet_links": false },
-                    "boveda": { "nivel_acceso": "Nivel_1_Lectura", "llaves_ofuscadas": false }
+                    "sinfonia": { 
+                        "rol": rangoSimulado, 
+                        "puede_subir_magnet_links": (rangoSimulado !== "Iniciado") 
+                    },
+                    "boveda": { 
+                        "nivel_acceso": rangoSimulado === "Maestro" ? "Nivel_3_Total" : "Nivel_2_Comunitario", 
+                        "llaves_ofuscadas": true 
+                    }
                 },
                 "registro_meritos_termodinamicos": {
                     "aporte_principal": datosFisicos.aporte,
-                    "puntos_contribucion": 0,
+                    "puntos_contribucion": rangoSimulado === "Maestro" ? 1000 : 0,
                     "ultimo_hash_consenso": "0x0000000000000000000000000000000000000000"
                 },
                 "linaje_generacional": [],
@@ -78,15 +93,13 @@ export const PerfilLogica = {
             const jsonString = JSON.stringify(nuevaCedula, null, 2);
             previewElement.value = jsonString;
 
-            // Actualizar la caja de estatus visual inmediatamente en la RAM
             this.cargarPerfilVisual(nuevaCedula, { statusBox });
 
-            // Descarga automatizada local
             const blob = new Blob([jsonString], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `cedula_${alias}_iniciado.json`;
+            a.download = `cedula_${alias}_${rangoSimulado.toLowerCase()}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
