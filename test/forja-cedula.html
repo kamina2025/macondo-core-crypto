@@ -2,56 +2,61 @@
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
-        <title>Macondo Core - Forja de Cédula</title>
+        <title>Macondo Core - Panel de Perfil Nodal</title>
         <style>
             body { background: #0a0f0d; color: #39ff14; font-family: "Courier New", monospace; padding: 20px; }
             .terminal { border: 1px solid #39ff14; padding: 25px; background: #020504; box-shadow: 0 0 15px rgba(57, 255, 20, 0.15); max-width: 650px; margin: 0 auto; }
             .form-group { margin-bottom: 15px; }
-            .seccion-perfil { border: 1px dashed #222; padding: 15px; background: #050a07; margin-bottom: 15px; }
+            .panel-soberano { border: 1px dashed #39ff14; padding: 15px; background: #050a07; margin-bottom: 15px; }
+            .panel-lector { border: 1px solid #00ffcc; padding: 15px; background: #010806; margin-bottom: 20px; }
             label { color: #00ffcc; display: block; margin-bottom: 5px; }
             input[type="text"], input[type="password"], select { background: #111; color: #39ff14; border: 1px solid #39ff14; padding: 8px; font-family: monospace; width: 95%; }
+            input[type="file"] { background: #111; color: #00ffcc; border: 1px dashed #00ffcc; padding: 10px; width: 90%; font-family: monospace; }
             button { background: #111; color: #39ff14; border: 1px solid #39ff14; padding: 12px 24px; cursor: pointer; font-family: monospace; width: 100%; font-size: 1rem; margin-top: 10px; }
             button:hover { background: #39ff14; color: #000; font-weight: bold; }
             .btn-back { background: transparent; color: #888; border: none; text-decoration: underline; cursor: pointer; display: inline-block; margin-bottom: 15px; }
             .btn-back:hover { color: #39ff14; }
-            textarea { width: 95%; height: 140px; background: #111; color: #39ff14; border: 1px solid #222; font-family: monospace; margin-top: 10px; resize: none; }
+            textarea { width: 95%; height: 120px; background: #111; color: #39ff14; border: 1px solid #222; font-family: monospace; margin-top: 10px; resize: none; }
             h3 { color: #39ff14; margin-top: 0; font-size: 1rem; border-bottom: 1px solid #222; padding-bottom: 5px; }
+            .status-live { background: #111; padding: 12px; border-left: 4px solid #00ffcc; font-size: 0.95rem; margin-top: 10px; display: none; line-height: 1.4; color: #00ffcc; }
         </style>
     </head>
     <body>
         <div class="terminal">
             <a href="index.html" class="btn-back">← Volver al Menú Central</a>
-            <h2>[ RITO DE FORJA INITIAL ]</h2>
-            <p>Establece tus credenciales para registrar tu nodo en el rango de <strong>Iniciado</strong>.</p>
+            <h2>[ ALTARES DE IDENTIDAD Y PERFIL ]</h2>
+            <p>Carga tu credencial soberana para verificar tus atributos o forja una nueva cédula.</p>
             <hr style="border-color: #222" />
 
-            <!-- CREDENCIALES CRIPTOGRÁFICAS -->
-            <div class="form-group">
-                <label>Alias del Custodio:</label>
-                <input type="text" id="alias" placeholder="Ej: Juan_Miranda" />
+            <!-- SECCIÓN LECTORA DE PERFILES EXISTENTES -->
+            <div class="panel-lector">
+                <h3 style="color: #00ffcc;">👁️ Cargar Cédula Vigente</h3>
+                <p style="font-size: 0.85rem; margin-top: 0; color: #888;">Inserta tu archivo .json para mapear tus rangos y méritos en la RAM:</p>
+                <input type="file" id="fileCargarCedula" accept=".json" />
+                <div id="statusLiveBox" class="status-live"></div>
             </div>
 
-            <div class="form-group">
-                <label>Frase de Acceso Local (Contraseña de Llave Privada):</label>
-                <input type="password" id="passphrase" placeholder="Mínimo 8 caracteres para blindaje" />
-            </div>
-
-            <!-- PERFIL DE APORTES (ANTI-CALZADA) -->
-            <div class="seccion-perfil">
-                <h3>[ Perfil Físico y Termodinámico del Nodo ]</h3>
+            <!-- FORMULARIO DE ATRIBUTOS (EDITABLE O PARA FORJA) -->
+            <div class="panel-soberano">
+                <h3>🛠️ Atributos del Nodo y Aportes</h3>
                 
                 <div class="form-group">
+                    <label>Alias del Custodio:</label>
+                    <input type="text" id="alias" placeholder="Ej: Juan_Miranda" />
+                </div>
+
+                <div class="form-group">
                     <label>Hardware de Infraestructura:</label>
-                    <input type="text" id="hardwareNodo" placeholder="Ej: Raspberry Pi 4, Hoverboard Reclamado, Laptop Vieja" />
+                    <input type="text" id="hardwareNodo" placeholder="Ej: Raspberry Pi 4, Hoverboard Reclamado" />
                 </div>
 
                 <div class="form-group">
-                    <label>Almacenamiento Dedicado a la Comunidad (GB):</label>
-                    <input type="text" id="almacenamientoGB" placeholder="Ej: 64" value="32" />
+                    <label>Almacenamiento Dedicado (GB):</label>
+                    <input type="text" id="almacenamientoGB" value="32" />
                 </div>
 
                 <div class="form-group">
-                    <label>Matriz de Aporte Físico Inicial:</label>
+                    <label>Matriz de Aporte Físico:</label>
                     <select id="aporteMaterial">
                         <option value="Reciclaje de Plásticos (Precious Plastic)">Reciclaje de Plásticos (Precious Plastic)</option>
                         <option value="Biomasa y Compostaje Local">Biomasa y Compostaje Local</option>
@@ -60,27 +65,72 @@
                         <option value="Logística y Transporte de Insumos">Logística y Transporte de Insumos</option>
                     </select>
                 </div>
+                
+                <div class="form-group" id="passContainer">
+                    <label>Frase de Acceso Local (Requerido solo para Nueva Forja):</label>
+                    <input type="password" id="passphrase" placeholder="Mínimo 8 caracteres para blindaje" />
+                </div>
             </div>
 
-            <button id="btnEjecutarForja">FORJAR CÉDULA NODAL (.JSON)</button>
+            <button id="btnEjecutarForja">FORJAR NUEVA CÉDULA NODAL (.JSON)</button>
 
             <hr style="border-color: #222; margin-top: 20px" />
-            <label>Previsualización de la Cédula Generada:</label>
-            <textarea id="previewCedula" readonly placeholder="Los datos estructurados aparecerán aquí al forjar..."></textarea>
+            <label>Previsualización del Manifiesto JSON:</label>
+            <textarea id="previewCedula" readonly placeholder="Los datos de la forja o el archivo cargado se desplegarán aquí..."></textarea>
         </div>
 
-        <!-- Carga de librerías locales -->
+        <!-- Librerías locales -->
         <script src="../src/openpgp.min.js"></script>
         <script type="module">
-            import { ForjaLogica } from "../src/forja-logica.js?v=999";
+            import { PerfilLogica } from "../src/perfil-logica.js?v=999";
 
+            // Referencias concentradas de la interfaz
+            const inputsMapeo = {
+                alias: document.getElementById("alias"),
+                hardware: document.getElementById("hardwareNodo"),
+                almacenamiento: document.getElementById("almacenamientoGB"),
+                aporte: document.getElementById("aporteMaterial"),
+                statusBox: document.getElementById("statusLiveBox")
+            };
+
+            const preview = document.getElementById("previewCedula");
+
+            // Evento 1: Lector de Cédulas Existentes (Muestra rangos y méritos evolutivos)
+            document.getElementById("fileCargarCedula").addEventListener("change", (e) => {
+                const archivo = e.target.files[0];
+                if (!archivo) return;
+
+                const lector = new FileReader();
+                lector.onload = (evento) => {
+                    try {
+                        const jsonParsed = JSON.parse(evento.target.result);
+                        preview.value = JSON.stringify(jsonParsed, null, 2);
+                        
+                        // Mapeamos los datos directamente usando el módulo lógico
+                        PerfilLogica.cargarPerfilVisual(jsonParsed, inputsMapeo);
+                        
+                        // Ocultar campo de password si ya es una cédula existente leída
+                        document.getElementById("passContainer").style.opacity = "0.4";
+                    } catch (err) {
+                        alert("El archivo seleccionado no es un perfil JSON válido.");
+                    }
+                };
+                lector.readAsText(archivo);
+            });
+
+            // Evento 2: Disparador de Forja Inicial (Rango Iniciado)
             document.getElementById("btnEjecutarForja").addEventListener("click", async () => {
-                const alias = document.getElementById("alias").value.trim();
+                const alias = inputsMapeo.alias.value.trim();
                 const pass = document.getElementById("passphrase").value;
-                const preview = document.getElementById("previewCedula");
+                
+                const datosFisicos = {
+                    hardware: inputsMapeo.hardware.value.trim(),
+                    almacenamiento: parseInt(inputsMapeo.almacenamiento.value) || 10,
+                    aporte: inputsMapeo.aporte.value
+                };
 
-                // Delegamos la ejecución criptográfica y de estructuración al archivo de lógica independiente
-                await ForjaLogica.procesarRito(alias, pass, preview);
+                await PerfilLogica.ejecutarForjaBase(alias, pass, datosFisicos, preview, inputsMapeo.statusBox);
+                document.getElementById("passContainer").style.opacity = "1";
             });
         </script>
     </body>
