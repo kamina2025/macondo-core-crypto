@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Macondo Core - Estaciones de Consenso</title>
+    <link rel="stylesheet" href="../css/terminal.css">
+</head>
+<body>
+    <div class="terminal ancho-extendido">
+        <a href="index.html" class="btn-back">← Volver al Menú Central</a>
+        <h1>[ ESTACIONES DE TRABAJO Y CADENA DE CONSENSO ]</h1>
+        <p>Laboratorio criptográfico para simular el tránsito de pruebas de aporte por la red DHT local.</p>
+        <hr>
+
+        <!-- ESTACIÓN A: APRENDIZ -->
+        <div class="panel-soberano" style="border-color: #39ff14;">
+            <h2 style="color: #39ff14; font-size: 1.1rem;">💻 Estación de Trabajo A: Aprendiz (Forjar Aporte)</h2>
+            <p style="font-size: 0.85rem; color: #888; margin-top: 0;">Carpeta Simulación Local Destino: <strong style="color: #39ff14;">aportes-aprendiz/</strong></p>
+            
+            <div class="form-group">
+                <label>Sube tu Cédula del Aprendiz (.json):</label>
+                <input type="file" id="cedulaAprendiz" accept=".json">
+            </div>
+            <div class="form-group">
+                <label>Frase de Acceso de tu Llave:</label>
+                <input type="password" id="passAprendiz" placeholder="Contraseña de tu llave privada">
+            </div>
+            <div class="form-group">
+                <label>Tipo de Requerimiento Sinfonía:</label>
+                <select id="tipoAporteSinfonia">
+                    <option value="Curaduría de 15 Canciones Comunitarias">Curaduría de 15 Canciones Comunitarias</option>
+                    <option value="Integración de 2 Nuevos Álbumes Ofuscados">Integración de 2 Nuevos Álbumes Ofuscados</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Descripción / Magnet Links del Aporte:</label>
+                <input type="text" id="descAporte" placeholder="Ej: magnet:?xt=urn:btih:a1a2a3... (15 Tracks)">
+            </div>
+            <button id="btnEmitirAporte">FORJAR CERTIFICADO DE APORTE</button>
+        </div>
+
+        <!-- ESTACIÓN B: OFICIAL -->
+        <div class="panel-lector" style="border-color: #ffaa00;">
+            <h2 style="color: #ffaa00; font-size: 1.1rem;">🛡️ Estación de Trabajo B: Oficial (Auditar y Verificar)</h2>
+            <p style="font-size: 0.85rem; color: #888; margin-top: 0;">Carpeta Origen: <strong>aportes-aprendiz/</strong> → Destino: <strong style="color: #ffaa00;">verificados-oficiales/</strong></p>
+            
+            <div class="form-group">
+                <label>Sube el Certificado recibido del Aprendiz (.json):</label>
+                <input type="file" id="certParaOficial" accept=".json">
+            </div>
+            <div class="form-group">
+                <label>Sube tu Cédula de Oficial Auditor (.json):</label>
+                <input type="file" id="cedulaOficial" accept=".json">
+            </div>
+            <div class="form-group">
+                <label>Frase de Acceso del Oficial:</label>
+                <input type="password" id="passOficial" placeholder="Contraseña de tu llave privada">
+            </div>
+            <button id="btnVerificarOficial" style="border-color: #ffaa00; color: #ffaa00;">FIRMAR Y PASAR A VERIFICADOS</button>
+        </div>
+
+        <!-- ESTACIÓN C: CONSEJO DE MAESTROS -->
+        <div class="panel-carga" style="border-color: #00ffcc;">
+            <h2 style="color: #00ffcc; font-size: 1.1rem;">🏛️ Estación de Trabajo C: Sala de Maestros (Consagración Colectiva N/M)</h2>
+            <p style="font-size: 0.85rem; color: #888; margin-top: 0;">Carpeta Origen: <strong>verificados-oficiales/</strong> → Destino: <strong style="color: #00ffcc;">consagrados-maestros/</strong></p>
+            
+            <div class="form-group">
+                <label>Sube el Certificado verificado por Oficial (.json):</label>
+                <input type="file" id="certParaMaestro" accept=".json">
+            </div>
+            <div class="form-group">
+                <label>Sube tu Cédula de Maestro (.json):</label>
+                <input type="file" id="cedulaMaestro" accept=".json">
+            </div>
+            <div class="form-group">
+                <label>Frase de Acceso del Maestro:</label>
+                <input type="password" id="passMaestro" placeholder="Contraseña de tu llave de Maestro">
+            </div>
+            <button id="btnConsagrarMaestro">ESTAMPAR FIRMA DE CONSEJO Y EMITIR</button>
+        </div>
+
+        <!-- CONSOLA LOG -->
+        <div id="consolaFlujo" class="status-box" style="border-color: #00ffcc;">
+            🪵 Consola de Red: Sistema listo. Carga certificados para iniciar el tránsito...
+        </div>
+    </div>
+
+    <script src="../src/openpgp.min.js"></script>
+    <script type="module">
+        import { ConsensoLogica } from "../src/consenso-logica.js?v=999";
+        import { PerfilLogica } from "../src/perfil-logica.js?v=999";
+
+        let cacheCedulaAprendiz = null;
+        let cacheCertificadoAporte = null;
+        let cacheCedulaOficial = null;
+        let cacheCertificadoOficial = null;
+        let cacheCedulaMaestro = null;
+
+        const logRed = (texto, error = false) => {
+            const c = document.getElementById("consolaFlujo");
+            c.style.borderColor = error ? "#ff3333" : "#00ffcc";
+            c.innerHTML = error ? `❌ ${texto}` : `🪵 ${texto}`;
+        };
+
+        const descargarBlob = (objetoJson, nombre) => {
+            const blob = new Blob([JSON.stringify(objetoJson, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = nombre;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        // EVENTOS LECTURA DE ARCHIVOS EN RAM
+        const configurarLector = (inputEl, callback) => {
+            inputEl.addEventListener("change", (e) => {
+                if (!e.target.files[0]) return;
+                const lector = new FileReader();
+                lector.onload = (ev) => {
+                    try { callback(JSON.parse(ev.target.result)); } 
+                    catch(err) { logRed("Error de parsing de JSON local.", true); }
+                };
+                lector.readAsText(e.target.files[0]);
+            });
+        };
+
+        configurarLector(document.getElementById("cedulaAprendiz"), (j) => { cacheCedulaAprendiz = j; logRed(`Cédula de Aprendiz [${j.metadata.alias_custodio}] leída en memoria.`); });
+        configurarLector(document.getElementById("certParaOficial"), (j) => { cacheCertificadoAporte = j; logRed(`Certificado de Aporte ID: ${j.id_aporte} cargado por Oficial.`); });
+        configurarLector(document.getElementById("cedulaOficial"), (j) => { cacheCedulaOficial = j; logRed(`Cédula de Oficial [${j.metadata.alias_custodio}] leída en memoria.`); });
+        configurarLector(document.getElementById("certParaMaestro"), (j) => { cacheCertificadoOficial = j; logRed(`Certificado con firma de Oficial cargado en la Sala de Maestros.`); });
+        configurarLector(document.getElementById("cedulaMaestro"), (j) => { cacheCedulaMaestro = j; logRed(`Cédula de Maestro [${j.metadata.alias_custodio}] leída en memoria.`); });
+
+        // ACCIÓN APRENDIZ
+        document.getElementById("btnEmitirAporte").addEventListener("click", async () => {
+            const pass = document.getElementById("passAprendiz").value;
+            const tipo = document.getElementById("tipoAporteSinfonia").value;
+            const desc = document.getElementById("descAporte").value;
+
+            if(!cacheCedulaAprendiz || !pass || !desc) { logRed("Estación Aprendiz incompleta. Faltan llaves, datos o password.", true); return; }
+            
+            logRed("Forjando Prueba de Aporte con firma criptográfica desprendida...");
+            try {
+                const cert = await ConsensoLogica.forjarPruebaAporte(
+                    cacheCedulaAprendiz.metadata.alias_custodio, tipo, desc,
+                    cacheCedulaAprendiz.certificado_actual.pgp_encrypted_private_key, pass
+                );
+                logRed("🟢 Certificado emitido con éxito. Almacénalo en la carpeta: 'aportes-aprendiz/'");
+                descargarBlob(cert, `prueba_aporte_${cacheCedulaAprendiz.metadata.alias_custodio}.json`);
+            } catch(e) { logRed(e.message, true); }
+        });
+
+        // ACCIÓN OFICIAL
+        document.getElementById("btnVerificarOficial").addEventListener("click", async () => {
+            const pass = document.getElementById("passOficial").value;
+            if(!cacheCertificadoAporte || !cacheCedulaOficial || !pass) { logRed("Estación Oficial incompleta. Carga el aporte, la cédula auditora y la clave.", true); return; }
+
+            logRed("Auditando firmas de origen y aplicando sello de Oficial...");
+            try {
+                const verificado = await ConsensoLogica.verificarYFirmarOficial(
+                    cacheCertificadoAporte, cacheCedulaOficial.metadata.alias_custodio,
+                    cacheCedulaOficial.certificado_actual.pgp_encrypted_private_key, pass
+                );
+                logRed("🟢 Certificado verificado. Muévelo a la carpeta de red: 'verificados-oficiales/'");
+                descargarBlob(verificado, `verificado_oficial_${verificado.id_aporte}.json`);
+            } catch(e) { logRed(e.message, true); }
+        });
+
+        // ACCIÓN CONSEJO DE MAESTROS
+        document.getElementById("btnConsagrarMaestro").addEventListener("click", async () => {
+            const pass = document.getElementById("passMaestro").value;
+            if(!cacheCertificadoOficial || !cacheCedulaMaestro || !pass) { logRed("Sala de Maestros incompleta. Requiere certificado del Oficial, credenciales de Maestro y clave.", true); return; }
+
+            logRed("Inyectando firma múltiple en el bloque de Consejo...");
+            try {
+                const consagrado = await ConsensoLogica.consagrarEnSalaMaestros(
+                    cacheCertificadoOficial, cacheCedulaMaestro.metadata.alias_custodio,
+                    cacheCedulaMaestro.certificado_actual.pgp_encrypted_private_key, pass
+                );
+
+                if (consagrado.estado_cadena === "Consagrado por Consejo de Maestros") {
+                    logRed("🏛️ ¡UMBRAL DE CONSENSO CONSEGUIDO! Generando base de datos global 'discoteca.json'...");
+                    descargarBlob(consagrado, `consagrado_maestro_FINAL_${consagrado.id_aporte}.json`);
+                    
+                    // Compilar el bloque limpio para el artefacto Sinfonía
+                    const discotecaGlobal = ConsensoLogica.compilarActivoDiscoteca(consagrado);
+                    setTimeout(() => { descargarBlob(discotecaGlobal, "discoteca.json"); }, 1000);
+                } else {
+                    logRed("🟡 Firma estamped con éxito. Estado: Consagración Parcial (Multi-Firma). Pasa este archivo al Siguiente Maestro.");
+                    descargarBlob(consagrado, `consagrado_parcial_${consagrado.id_aporte}.json`);
+                }
+            } catch(e) { logRed(e.message, true); }
+        });
+    </script>
+</body>
+</html>
