@@ -31,6 +31,17 @@
                     <input type="text" id="alias" placeholder="Ej: Juan_Miranda" />
                 </div>
 
+                <!-- SELECTOR DE RANGO INTEGRADO PARA SIMULACIÓN -->
+                <div class="form-group">
+                    <label>Rango en la Comunidad (Asignación Manual):</label>
+                    <select id="rangoSimulado" style="border-color: #00ffcc; color: #00ffcc;">
+                        <option value="Iniciado">Iniciado (Rango Base / Pasarela)</option>
+                        <option value="Aprendiz">Aprendiz (Operador de Gremio)</option>
+                        <option value="Oficial">Oficial (Supervisor de Bóvedas)</option>
+                        <option value="Maestro">Maestro (Consejo Consagrador M/N)</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label>Hardware de Infraestructura:</label>
                     <input type="text" id="hardwareNodo" placeholder="Ej: Raspberry Pi 4" />
@@ -95,15 +106,18 @@
                         PerfilLogica.cargarPerfilVisual(jsonParsed, inputsMapeo);
                         document.getElementById("passContainer").style.opacity = "0.4";
 
+                        // Sincronizar el selector de rango con lo que viene del JSON cargado
+                        if (jsonParsed.metadata?.rango_actual && document.getElementById("rangoSimulado")) {
+                            document.getElementById("rangoSimulado").value = jsonParsed.metadata.rango_actual;
+                        }
+
                         // 2. DISPARADOR DUAL: Evaluar el rango del certificado running en RAM
                         const rango = jsonParsed.metadata?.rango_actual || "Iniciado";
                         const gremio = jsonParsed.registro_meritos_termodinamicos?.aporte_principal || "";
 
                         if (rango === "Iniciado") {
-                            // Si es Iniciado, inyectamos la pasarela económica de integración
                             GremioLogica.mostrarPasarelaIniciado(contenedorDinamico);
                         } else {
-                            // Si es Custodio / Aprendiz, inyectamos la pizarra de misiones de los gremios
                             GremioLogica.mostrarPizarraCustodio(contenedorDinamico, gremio);
                         }
 
@@ -125,8 +139,9 @@
                     aporte: inputsMapeo.aporte.value
                 };
 
+                // El archivo src/perfil-logica.js leerá el elemento "rangoSimulado" internamente
                 await PerfilLogica.ejecutarForjaBase(alias, pass, datosFisicos, preview, inputsMapeo.statusBox);
-                contenedorDinamico.style.display = "none"; // Ocultar en forja nueva
+                contenedorDinamico.style.display = "none";
                 document.getElementById("passContainer").style.opacity = "1";
             });
         </script>
