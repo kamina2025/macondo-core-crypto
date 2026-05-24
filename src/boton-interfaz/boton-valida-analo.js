@@ -16,33 +16,44 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 🔍 Análisis perimetral del formato del token del patio
-        if (rawString.startsWith("MACONDO_SELLO:")) {
+        // 🧼 SANITIZACIÓN DE PATIO AUTOMÁTICA:
+        // Normaliza variaciones tolerando mayúsculas/minúsculas, guiones bajos o espacios múltiples
+        // Ejemplo: Transforma "MACONDO SELLO:" o "macondo_sello  :" en "MACONDO_SELLO:"
+        let limpia = rawString.replace(/MACONDO[\s_]+SELLO\s*:/i, "MACONDO_SELLO:");
+
+        // 🔍 Análisis perimetral tolerando textos adjuntos (ej. mensajes decorativos de WhatsApp)
+        if (limpia.includes("MACONDO_SELLO:")) {
             try {
+                // Aislar la cadena partiendo desde donde se detecte el Sello Soberano
+                const indiceSello = limpia.indexOf("MACONDO_SELLO:");
+                const subCadena = limpia.substring(indiceSello).trim();
+
                 // Separar la cabecera, la transacción b64 y la firma covalente corta
-                const partes = rawString.split(":");
+                const partes = subCadena.split(":");
                 if (partes.length < 3) {
-                    throw new Error("El Sello Nodal no contiene los tres bloques fundamentales de autenticidad.");
+                    throw new Error("El Sello Nodal no contiene los bloques fundamentales (Prefijo:Payload:Firma).");
                 }
 
-                const payloadB64 = partes[1];
-                const firmaCovalente = partes[2];
+                // Remover quiebres de página, espacios en blanco o retornos de carro (\r, \n, tab)
+                // insertados accidentalmente por la renderización del PDF o el wrapping térmico.
+                const payloadB64 = partes[1].replace(/\s/g, "");
+                const firmaCovalente = partes[2].replace(/\s/g, "");
 
-                // Decodificar los metadatos inyectados en caliente en el string
+                // Decodificar criptográficamente el payload JSON encapsulado en Base64 en la RAM
                 const datosDecodificadosJSON = atob(payloadB64);
                 const objetoTransaccion = JSON.parse(datosDecodificadosJSON);
 
-                // Reconstruir interfaz de éxito
+                // Reconstruir interfaz de éxito y renderizar datos en frío
                 renderizarExito(objetoTransaccion, firmaCovalente);
 
             } catch (err) {
-                renderizarFallo("Fallo de Integridad", `No se pudo parsear el sello analógico: ${err.message}`);
+                renderizarFallo("Fallo de Integridad", `No se pudo descifrar el sello analógico: ${err.message}`);
             }
         } else if (rawString.includes("-----BEGIN PGP SIGNATURE-----")) {
             // Flujo B: Sello PGP Estándar Desprendido
             renderizarFallo("Entorno Limitado", "Firma PGP legítima detectada. Conecte un Faro de red con openpgp.js para verificar el árbol completo.");
         } else {
-            renderizarFallo("Cadena Inválida", "El formato ingresado no corresponde a un sello emitido soberanamente por las Estaciones de Macondo.");
+            renderizarFallo("Cadena Inválida", "El formato ingresado no posee el prefijo de autenticidad de Macondo. Asegúrese de incluir el bloque que empieza por 'MACONDO SELLO:'.");
         }
     });
 
@@ -62,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </tr>
                     <tr>
                         <td>Firma de Validación:</td>
-                        <td style="font-family:monospace; color:#8b949e;">${firma}</td>
+                        <td style="font-family:monospace; color:#8b949e; word-break: break-all;">${firma}</td>
                     </tr>
                     <tr>
                         <td>Estado de Seguridad:</td>
