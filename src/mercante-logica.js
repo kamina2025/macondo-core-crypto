@@ -1,6 +1,6 @@
 /**
- * PROYECTO MACONDO - NÚCLEO DE INTERCAMBIO MERCANTE Y FIDELIZACIÓN V2
- * Gestión de PINs de 5,000 COP y matriz de descuentos (5% Digital / 2% Hidroponía).
+ * PROYECTO MACONDO - NÚCLEO DE INTERCAMBIO MERCANTE Y FIDELIZACIÓN V2 (CORREGIDO)
+ * Gestión de PINs de 5,000 COP, matriz de descuentos (5% Digital / 2% Hidroponía) y quema de tokens.
  */
 
 export const MercanteLogica = {
@@ -39,7 +39,7 @@ export const MercanteLogica = {
         return pinCompleto;
     },
 
-  /**
+    /**
      * SISTEMA DE ACUMULACIÓN: Genera lealtad inyectando puntos en la cédula.
      * Regla base: 1 punto por cada 1,000 COP transaccionados.
      */
@@ -77,7 +77,6 @@ export const MercanteLogica = {
         let tasa = 0;
         let esValido = false;
 
-        // Configuración de tasas solicitadas
         if (tipoProducto.toLowerCase() === "hidroponico") {
             tasa = 0.02; // 2% para lechugas, sandías mini, etc.
             esValido = true;
@@ -91,7 +90,6 @@ export const MercanteLogica = {
         const descuentoCalculado = valorOriginal * tasa;
         const valorFinal = valorOriginal - descuentoCalculado;
         
-        // Simulación del costo en puntos: Cada peso de descuento equivale a 1 punto deducido
         const puntosRequeridos = Math.ceil(descuentoCalculado);
         const puedeAplicar = puntosDisponibles >= puntosRequeridos;
 
@@ -116,7 +114,6 @@ export const MercanteLogica = {
             throw new Error(`Puntos insuficientes para el descuento del ${calculo.tasa_aplicada}. Requiere ${calculo.puntos_costo} pts, tiene ${puntosActuales} pts.`);
         }
 
-        // Aseguramos la existencia del historial también en la redención
         if (!certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios) {
             certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios = [];
         }
@@ -134,17 +131,15 @@ export const MercanteLogica = {
             certificadoActualizado: certificadoIniciado,
             detalles: calculo
         };
-    }
-};
-/**
-     * VALIDACIÓN Y QUEMA DE PIN: Verifica si un PIN es válido para el artefacto
-     * solicitado y lo marca como usado para evitar el doble gasto en el patio.
+    },
+
+    /**
+     * VALIDACIÓN Y QUEMA DE PIN: Evita el doble gasto en los artefactos del patio.
      */
     validarYConsumirPin(pinIngresado, artefactoDestino) {
         let pinsActivos = this.obtenerBovedaMercante("pins_validos");
         if (!pinsActivos.lista) pinsActivos.lista = [];
 
-        // Buscamos el PIN en la base de datos distribuida simulada
         const tokenEncontrado = pinsActivos.lista.find(p => p.pin === pinIngresado.trim());
 
         if (!tokenEncontrado) {
@@ -159,7 +154,6 @@ export const MercanteLogica = {
             throw new Error(`PIN incorrecto. Este token fue forjado exclusivamente para el artefacto: ${tokenEncontrado.artefacto}`);
         }
 
-        // Quemamos el PIN en el registro para que no pueda ser reutilizado
         tokenEncontrado.usado = true;
         tokenEncontrado.timestamp_consumo = new Date().toISOString();
 
@@ -171,3 +165,4 @@ export const MercanteLogica = {
             fecha_emision: tokenEncontrado.timestamp_emision
         };
     }
+};
