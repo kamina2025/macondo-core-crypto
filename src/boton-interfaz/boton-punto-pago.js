@@ -246,3 +246,42 @@ document.addEventListener('DOMContentLoaded', () => {
         window.open(url, '_blank');
     });
 });
+/**
+ * Dispara la impresión/visualización del ticket con el Sello QR integrado
+ */
+async function procesarImpresionTicketSoberano(transaccionActual) {
+    // Recuperamos la clave privada almacenada temporalmente bajo la sesión blindada
+    const llavePrivadaArmored = sessionStorage.getItem("macondo_session_token"); // El estándar unificado en RAM
+    const fraseAcceso = prompt("[Seguridad] Introduce tu frase de acceso para firmar analógicamente el ticket:");
+
+    if (!llavePrivadaArmored || !fraseAcceso) {
+        alert("Acceso denegado. No se puede firmar criptográficamente el comprobante.");
+        return;
+    }
+
+    console.log("[*] Generando Sello PGP desprendido para el soporte analógico...");
+    
+    // Generar el string compacto combinando metadatos y firma asíncrona
+    const stringQR = await MacondoQRTermico.forjarSelloQR(
+        transaccionActual, 
+        llavePrivadaArmored, 
+        fraseAcceso
+    );
+
+    // Limpiar el contenedor del QR anterior en el nodo del DOM
+    const contenedorQR = document.getElementById("ticket-qr-container");
+    contenedorQR.innerHTML = "";
+
+    // Invocar qrcode.js configurando parámetros de alta tolerancia a errores (Correct Level 'M' o 'Q')
+    // para compensar imperfecciones físicas en el papel térmico o arrugas.
+    new QRCode(contenedorQR, {
+        text: stringQR,
+        width: 180,  // Tamaño óptimo para el ancho de papel de 58mm
+        height: 180,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.M // Nivel medio: permite hasta 15% de daño en papel
+    });
+
+    console.log("[🟢] Sello QR Analógico incrustado con éxito. Listo para el corte térmico.");
+}

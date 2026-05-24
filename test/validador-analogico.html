@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Macondo - Altar de Validación Analógica</title>
+        <style>
+            :root {
+                --bg-principal: #0d1117;
+                --bg-panel: #161b22;
+                --borde-cyber: #30363d;
+                --verde-macondo: #10b981;
+                --rojo-alerta: #ef4444;
+                --texto-puro: #c9d1d9;
+                --texto-apagado: #8b949e;
+            }
+
+            body {
+                background-color: var(--bg-principal);
+                color: var(--texto-puro);
+                font-family: "Courier New", Courier, monospace;
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
+
+            .contenedor-altar {
+                width: 100%;
+                max-width: 650px;
+                background-color: var(--bg-panel);
+                border: 1px solid var(--borde-cyber);
+                border-radius: 8px;
+                padding: 25px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            }
+
+            h2 {
+                color: var(--verde-macondo);
+                border-bottom: 1px solid var(--borde-cyber);
+                padding-bottom: 10px;
+                margin-top: 0;
+                font-size: 1.4rem;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+
+            .seccion {
+                margin-bottom: 20px;
+            }
+
+            label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: bold;
+                font-size: 0.85rem;
+                color: var(--texto-apagado);
+                text-transform: uppercase;
+            }
+
+            textarea {
+                width: 100%;
+                background-color: var(--bg-principal);
+                border: 1px solid var(--borde-cyber);
+                border-radius: 4px;
+                color: var(--verde-macondo);
+                padding: 10px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                resize: vertical;
+                box-sizing: border-box;
+            }
+
+            textarea:focus {
+                outline: 1px solid var(--verde-macondo);
+            }
+
+            .grid-inputs {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            button {
+                width: 100%;
+                background-color: transparent;
+                border: 1px solid var(--verde-macondo);
+                color: var(--verde-macondo);
+                padding: 12px;
+                font-family: monospace;
+                font-size: 1rem;
+                font-weight: bold;
+                text-transform: uppercase;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border-radius: 4px;
+                margin-top: 10px;
+            }
+
+            button:hover {
+                background-color: var(--verde-macondo);
+                color: var(--bg-principal);
+                box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+            }
+
+            /* Monitor de Estado Termodinámico */
+            .pantalla-auditoria {
+                margin-top: 25px;
+                padding: 15px;
+                background-color: var(--bg-principal);
+                border: 1px solid var(--borde-cyber);
+                border-radius: 4px;
+                min-height: 120px;
+            }
+
+            .estado-inicial {
+                color: var(--texto-apagado);
+                text-align: center;
+                padding-top: 35px;
+                font-style: italic;
+            }
+
+            .resultado-exito {
+                border-left: 4px solid var(--verde-macondo);
+                padding-left: 15px;
+            }
+
+            .resultado-exito h3 {
+                color: var(--verde-macondo);
+                margin-top: 0;
+                text-transform: uppercase;
+            }
+
+            .resultado-fallo {
+                border-left: 4px solid var(--rojo-alerta);
+                padding-left: 15px;
+            }
+
+            .resultado-fallo h3 {
+                color: var(--rojo-alerta);
+                margin-top: 0;
+                text-transform: uppercase;
+            }
+
+            .tabla-datos {
+                width: 100%;
+                margin-top: 10px;
+                border-collapse: collapse;
+            }
+
+            .tabla-datos td {
+                padding: 4px 0;
+                font-size: 0.9rem;
+            }
+
+            .tabla-datos td:first-child {
+                color: var(--texto-apagado);
+                width: 40%;
+            }
+
+            .badge-id {
+                background-color: var(--borde-cyber);
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-size: 0.8rem;
+                color: var(--texto-puro);
+            }
+        </style>
+
+        <script src="../src/openpgp.min.js"></script>
+        <script src="./macondo-qr-termico.js"></script>
+    </head>
+    <body>
+        <div class="contenedor-altar">
+            <h2>Validación de Sello QR Analógico</h2>
+
+            <div class="grid-inputs">
+                <div class="seccion">
+                    <label for="pubKeyInput">Clave Pública PGP del Mercante Emisor</label>
+                    <textarea
+                        id="pubKeyInput"
+                        rows="5"
+                        placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----&#10;... (Pegar la llave de la Cédula Nodal del Mercante) ..."></textarea>
+                </div>
+
+                <div class="seccion">
+                    <label for="qrStringInput">Lectura Cruda del Sello QR (Cámara o Lector)</label>
+                    <textarea id="qrStringInput" rows="4" placeholder="PAYLOAD_BASE64|FIRMA_RAW_BASE64"></textarea>
+                </div>
+            </div>
+
+            <button id="btnVerificar" onclick="ejecutarAuditoriaFisica()">Ejecutar Auditoría Criptográfica</button>
+
+            <div class="pantalla-auditoria" id="monitorTerminal">
+                <div class="estado-inicial">[Esperando inyección de datos de ticket térmico...]</div>
+            </div>
+        </div>
+
+        <script>
+            async function ejecutarAuditoriaFisica() {
+                const monitor = document.getElementById("monitorTerminal");
+                const pubKey = document.getElementById("pubKeyInput").value.trim();
+                const qrString = document.getElementById("qrStringInput").value.trim();
+
+                // Validación de campos vacíos antes de computar en RAM
+                if (!pubKey || !qrString) {
+                    monitor.innerHTML = `
+                    <div class="resultado-fallo">
+                        <h3>Error de Entrada</h3>
+                        <p>Faltan datos críticos en el altar. Asegúrate de cargar tanto la llave pública como el string del QR.</p>
+                    </div>`;
+                    return;
+                }
+
+                monitor.innerHTML = `<div class="estado-inicial">[Computando verificación asíncrona en RAM...]</div>`;
+
+                // Ejecutar la validación utilizando el módulo lógico de Macondo
+                const resultado = await MacondoQRTermico.validarSelloQR(qrString, pubKey);
+
+                if (resultado.esValido) {
+                    // Formatear fecha del timestamp del ticket
+                    const fechaTicket = new Date(resultado.datos.t * 1000).toLocaleString();
+
+                    monitor.innerHTML = `
+                    <div class="resultado-exito">
+                        <h3>🟢 AUTENTICIDAD TOTAL CONVERGENTE</h3>
+                        <p>La firma criptográfica es legítima. El registro no ha sido alterado manualmente.</p>
+                        <table class="tabla-datos">
+                            <tr>
+                                <td>Mercante ID:</td>
+                                <td><span class="badge-id">${resultado.datos.id}</span></td>
+                            </tr>
+                            <tr>
+                                <td>Monto Transado:</td>
+                                <td><strong>${resultado.datos.m} Puntos</strong></td>
+                            </tr>
+                            <tr>
+                                <td>PIN Verificación:</td>
+                                <td><code>${resultado.datos.p}</code></td>
+                            </tr>
+                            <tr>
+                                <td>Último Hash Consenso:</td>
+                                <td><small>${resultado.datos.h}</small></td>
+                            </tr>
+                            <tr>
+                                <td>Fecha de Forja:</td>
+                                <td>${fechaTicket}</td>
+                            </tr>
+                            <tr>
+                                <td>Key ID PGP:</td>
+                                <td><code>${resultado.keyId}</code></td>
+                            </tr>
+                        </table>
+                    </div>`;
+                } else {
+                    monitor.innerHTML = `
+                    <div class="resultado-fallo">
+                        <h3>🚨 ALERTA DE FRAUDE / ALTERACIÓN</h3>
+                        <p>La verificación matemática ha fallado de forma contundente. El ticket es falso, la firma no corresponde al emisor, o el payload fue modificado.</p>
+                        <table class="tabla-datos">
+                            <tr>
+                                <td>Causa del Fallo:</td>
+                                <td><span style="color: var(--rojo-alerta);">${resultado.error || "Firma PGP No Válida"}</span></td>
+                            </tr>
+                        </table>
+                    </div>`;
+                }
+            }
+        </script>
+    </body>
+</html>
