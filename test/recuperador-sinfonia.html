@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
@@ -36,11 +36,13 @@
             <p>Lado del cliente: Reconstrucción polinómica de Shamir para descifrar enlaces WebTorrent en la RAM.</p>
             <hr />
 
+            <!-- CARGAR DISCOTECA -->
             <div class="panel-lector">
                 <h3>📂 Cargar Catálogo Comunal Consagrado (discoteca.json)</h3>
                 <input type="file" id="archivoDiscoteca" accept=".json" />
             </div>
 
+            <!-- TABLA DE RECURSOS -->
             <div id="seccionCatalogo" class="panel-soberano" style="display: none">
                 <h3>💿 Recursos Disponibles Ofuscados en la Red Distributed</h3>
                 <table class="tabla-recursos">
@@ -56,6 +58,7 @@
                 </table>
             </div>
 
+            <!-- MESA DE DESBLOQUEO (Contenedor que se desplegará solo al seleccionar) -->
             <div id="mesaDesbloqueo" class="panel-carga" style="display: none; border-color: #ff3333">
                 <h3 style="color: #ff3333">🔓 Consenso de Llaves de Entrada (Se requiere Quórum 2 de 3)</h3>
                 <p style="font-size: 0.85rem; color: #aaa">
@@ -83,136 +86,143 @@
                 </button>
             </div>
 
+            <!-- MONITOR DE ESTADO -->
             <div id="consolaRecuperador" class="status-box" style="border-color: #00ffcc">
                 🪵 Monitor de Sinfonía: Esperando inserción del catálogo distribuido...
             </div>
         </div>
 
         <script type="module">
-               import { ConsensoLogica } from "../src/consenso-logica.js?v=999";
+            import { ConsensoLogica } from "../src/consenso-logica.js?v=999";
 
-               let discotecaCargada = null;
-               let itemSeleccionado = null;
+            let discotecaCargada = null;
+            let itemSeleccionado = null;
 
-               const monitor = (texto, err = false) => {
-                   const c = document.getElementById("consolaRecuperador");
-                   c.style.borderColor = err ? "#ff3333" : "#00ffcc";
-                   c.innerHTML = err ? `❌ ${texto}` : `🪵 ${texto}`;
-               };
+            const monitor = (texto, err = false) => {
+                const c = document.getElementById("consolaRecuperador");
+                c.style.borderColor = err ? "#ff3333" : "#00ffcc";
+                c.innerHTML = err ? `❌ ${texto}` : `🪵 ${texto}`;
+            };
 
-               // LECTURA DEL ARCHIVO CENTRAL
-               document.getElementById("archivoDiscoteca").addEventListener("change", (e) => {
-                   if (!e.target.files[0]) return;
-                   const lector = new FileReader();
-                   lector.onload = (ev) => {
-                       try {
-                           discotecaCargada = JSON.parse(ev.target.result);
-                           monitor(`Catálogo cargado con éxito. Nodo Emisor: ${discotecaCargada.nodo_emisor || "Desconocido"}`);
-                           renderizarTracks();
-                       } catch(err) { monitor("Archivo de catálogo inválido o corrupto.", true); }
-                   };
-                   lector.readAsText(e.target.files[0]);
-               });
+            // LECTURA DEL ARCHIVO CENTRAL
+            document.getElementById("archivoDiscoteca").addEventListener("change", (e) => {
+                if (!e.target.files[0]) return;
+                const lector = new FileReader();
+                lector.onload = (ev) => {
+                    try {
+                        discotecaCargada = JSON.parse(ev.target.result);
+                        monitor(`Catálogo cargado con éxito. Nodo Emisor: ${discotecaCargada.nodo_emisor || "Desconocido"}`);
+                        renderizarTracks();
+                    } catch(err) { 
+                        monitor("Archivo de catálogo inválido o corrupto.", true); 
+                    }
+                };
+                lector.readAsText(e.target.files[0]);
+            });
 
-               // DESPLEGAR TABLA DE TRACKS BLINDADOS
-               function renderizarTracks() {
-                   const tbody = document.getElementById("listaTracks");
-                   tbody.innerHTML = "";
-                   const recursos = discotecaCargada.catalogo_recursos || [];
+            // DESPLEGAR TABLA DE TRACKS BLINDADOS
+            function renderizarTracks() {
+                const tbody = document.getElementById("listaTracks");
+                tbody.innerHTML = "";
+                const recursos = discotecaCargada.catalogo_recursos || [];
 
-                   if(recursos.length === 0) {
-                       tbody.innerHTML = "<tr><td colspan='4'>El catálogo no contiene activos validados.</td></tr>";
-                       return;
-                   }
+                if (recursos.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='4'>El catálogo no contiene activos validados.</td></tr>";
+                    return;
+                }
 
-                   document.getElementById("seccionCatalogo").style.display = "block";
+                document.getElementById("seccionCatalogo").style.display = "block";
 
-                   recursos.forEach(r => {
-                       const fila = document.createElement("tr");
-                       fila.innerHTML = `
-                           <td><code style="color:#39ff14;">${r.id_transaccion}</code></td>
-                           <td><span style="color:#00ffcc; font-size:0.8rem;">${r.status}</span></td>
-                           <td><small style="color:#666; font-family:monospace;">${r.payload_bloqueado.substring(0,15)}...</small></td>
-                           <td><button class="btnSeleccionarTrack" data-id="${r.id_transaccion}" style="padding:4px 8px; font-size:0.75rem;">⚡ Seleccionar</button></td>
-                       `;
-                       tbody.appendChild(fila);
-                   });
+                recursos.forEach(r => {
+                    const fila = document.createElement("tr");
+                    fila.innerHTML = `
+                        <td><code style="color:#39ff14;">${r.id_transaccion}</code></td>
+                        <td><span style="color:#00ffcc; font-size:0.8rem;">${r.status}</span></td>
+                        <td><small style="color:#666; font-family:monospace;">${r.payload_bloqueado ? r.payload_bloqueado.substring(0,15) : ""}...</small></td>
+                        <td><button class="btnSeleccionarTrack" data-id="${r.id_transaccion}" style="padding:4px 8px; font-size:0.75rem;">⚡ Seleccionar</button></td>
+                    `;
+                    tbody.appendChild(fila);
+                });
 
-            document.querySelectorAll(".btnSeleccionarTrack").forEach(btn => {
-                       btn.addEventListener("click", (e) => {
-                           const id = e.target.getAttribute("data-id");
-                           itemSeleccionado = recursos.find(r => r.id_transaccion === id);
+                // ASIGNAR ENTRADAS DINÁMICAS (Correctamente encapsulado dentro de la función)
+                document.querySelectorAll(".btnSeleccionarTrack").forEach(btn => {
+                    btn.addEventListener("click", (e) => {
+                        const id = e.target.getAttribute("data-id");
+                        itemSeleccionado = recursos.find(r => r.id_transaccion === id);
 
-                           monitor(`Activo [${id}] seleccionado. Consultando red de Faros automáticamente...`);
+                        monitor(`Activo [${id}] seleccionado. Consultando red de Faros automáticamente...`);
 
-                           // SIMULACIÓN DE CONSULTA DHT SILENCIOSA
-                           try {
-                               const baseLlaves = JSON.parse(localStorage.getItem("boveda_llaves_dht_privadas")) || {};
-                               const llavesDelActivo = baseLlaves[id];
+                        try {
+                            const baseLlaves = JSON.parse(localStorage.getItem("boveda_llaves_dht_privadas")) || {};
+                            const llavesDelActivo = baseLlaves[id];
 
-                               if (llavesDelActivo) {
-                                   // 1. Forzamos el despliegue visual del bloque de la mesa táctica
-                                   document.getElementById("mesaDesbloqueo").style.display = "block";
+                            if (llavesDelActivo) {
+                                // Desplegamos la mesa táctica en pantalla
+                                document.getElementById("mesaDesbloqueo").style.display = "block";
 
-                                   // 2. El sistema inyecta las llaves recuperadas automáticamente en los inputs
-                                   document.getElementById("fragmentoInputA").value = llavesDelActivo.nodo_A;
-                                   document.getElementById("fragmentoInputB").value = llavesDelActivo.nodo_B;
+                                // Sincronizamos las llaves de forma automática en la RAM
+                                document.getElementById("fragmentoInputA").value = llavesDelActivo.nodo_A;
+                                document.getElementById("fragmentoInputB").value = llavesDelActivo.nodo_B;
 
-                                   monitor(`🟢 <strong>Faros Sincronizados:</strong> Se recuperó el quórum de llaves automáticamente para el activo: ${id}. Listo para reproducir.`);
-                               } else {
-                                   monitor("⚠️ Alerta: Este activo pertenece a una versión anterior sin tabla de distribución hash.", true);
-                               }
-                           } catch(err) {
-                               monitor("Fallo en la conexión simulada de la DHT.", true);
-                           }
-                       });
-                   });
+                                monitor(`🟢 <strong>Faros Sincronizados:</strong> Se recuperó el quórum de llaves automáticamente para el activo: ${id}. Listo para reproducir.`);
+                            } else {
+                                monitor("⚠️ Alerta: Este activo pertenece a una versión anterior sin tabla de distribución hash.", true);
+                            }
+                        } catch(err) {
+                            monitor("Fallo en la conexión simulada de la DHT.", true);
+                        }
+                    });
+                });
+            }
 
-               // RECONSTRUCCIÓN Y LOGICA INVERSA XOR
-               // RECONSTRUCCIÓN Y LOGICA INVERSA XOR CORREGIDA
-               document.getElementById("btnEjecutarApertura").addEventListener("click", () => {
-                   const fragA = document.getElementById("fragmentoInputA").value.trim();
-                   const fragB = document.getElementById("fragmentoInputB").value.trim();
+            // RECONSTRUCCIÓN Y LOGICA INVERSA XOR
+            document.getElementById("btnEjecutarApertura").addEventListener("click", () => {
+                if (!itemSeleccionado) {
+                    monitor("No se ha seleccionado ningún activo del catálogo.", true);
+                    return;
+                }
 
-                   if (!fragA || !fragB) {
-                       monitor("Falta ingresar los fragmentos de soberanía requeridos.", true);
-                       return;
-                   }
+                const fragA = document.getElementById("fragmentoInputA").value.trim();
+                const fragB = document.getElementById("fragmentoInputB").value.trim();
 
-                  try {
-                       monitor("⏳ Ejecutando interpolación polinomial en caliente...");
+                if (!fragA || !fragB) {
+                    monitor("Falta ingresar los fragmentos de soberanía requeridos.", true);
+                    return;
+                }
 
-                       // 1. Reconstruimos matemáticamente la semilla numérica cruzando los puntos coordenados
-                       const p1 = JSON.parse(atob(fragA));
-                       const p2 = JSON.parse(atob(fragB));
-                       const pendiente = (p2.y - p1.y) / (p2.x - p1.x);
-                       const semillaReconstruida = p1.y - (p1.x * pendiente);
+                try {
+                    monitor("⏳ Ejecutando interpolación polinomial en caliente...");
 
-                       // Formateamos la clave exacta clonada
-                       const claveClonada = "K_" + Math.round(semillaReconstruida);
+                    // 1. Reconstrucción matemática lineal
+                    const p1 = JSON.parse(atob(fragA));
+                    const p2 = JSON.parse(atob(fragB));
+                    const pendiente = (p2.y - p1.y) / (p2.x - p1.x);
+                    const semillaReconstruida = p1.y - (p1.x * pendiente);
 
-                       // 2. Extraemos el payload revertiendo el blindaje Base64 seguro
-                       const stringDecodificado = decodeURIComponent(atob(itemSeleccionado.payload_bloqueado));
+                    const claveClonada = "K_" + Math.round(semillaReconstruida);
 
-                       // 3. Ejecutamos el desencadenamiento XOR inverso en RAM
-                       let enlaceLimpio = "";
-                       for (let i = 0; i < stringDecodificado.length; i++) {
-                           let charCode = stringDecodificado.charCodeAt(i) ^ claveClonada.charCodeAt(i % claveClonada.length);
-                           enlaceLimpio += String.fromCharCode(charCode);
-                       }
+                    // 2. Extraemos el payload revertiendo el blindaje seguro
+                    const stringDecodificado = decodeURIComponent(atob(itemSeleccionado.payload_bloqueado));
 
-                       // 4. Verificación e inyección visual en la terminal
-                       monitor(`🎉 <strong>¡ACTIVO DESBLOCKED EN RAM!</strong><br><br>
-                       <span style="color:#39ff14; font-size:1.05rem;">Enlace Recuperado:</span> <code style="color:#00ffcc; word-break:break-all;">${enlaceLimpio}</code><br><br>
-                       <span style="font-size:0.85rem; color:#888;">Paquete listo para despachar al motor nativo de WebTorrent.</span>`);
+                    // 3. XOR inverso en RAM
+                    let enlaceLimpio = "";
+                    for (let i = 0; i < stringDecodificado.length; i++) {
+                        let charCode = stringDecodificado.charCodeAt(i) ^ claveClonada.charCodeAt(i % claveClonada.length);
+                        enlaceLimpio += String.fromCharCode(charCode);
+                    }
 
-                       document.getElementById("fragmentoInputA").value = "";
-                       document.getElementById("fragmentoInputB").value = "";
+                    // 4. Inyección en la terminal soberana
+                    monitor(`🎉 <strong>¡ACTIVO DESBLOCKED EN RAM!</strong><br><br>
+                    <span style="color:#39ff14; font-size:1.05rem;">Enlace Recuperado:</span> <code style="color:#00ffcc; word-break:break-all;">${enlaceLimpio}</code><br><br>
+                    <span style="font-size:0.85rem; color:#888;">Paquete listo para despachar al motor nativo de WebTorrent.</span>`);
 
-                   } catch(err) {
-                       monitor("Error criptográfico crítico. Asegúrate de ingresar cadenas Shamir Base64 válidas o que correspondan al mismo activo.", true);
-                   }
-               });
+                    document.getElementById("fragmentoInputA").value = "";
+                    document.getElementById("fragmentoInputB").value = "";
+
+                } catch(err) {
+                    monitor("Error criptográfico crítico. Asegúrate de ingresar cadenas Shamir Base64 válidas o que correspondan al mismo activo.", true);
+                }
+            });
         </script>
     </body>
 </html>
