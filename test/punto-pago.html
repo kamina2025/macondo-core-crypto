@@ -20,7 +20,6 @@
 
         <div class="split-comercio">
             
-            <!-- PANEL IZQUIERDO: EMISIÓN DE PINS (5,000 COP) -->
             <div class="col-mercante panel-soberano">
                 <h3>🎫 Expendedora de PINs de Acceso</h3>
                 <p style="font-size:0.85rem; color:#aaa;">Costo Estándar: 5,000 COP. Selecciona el destino para forjar el token:</p>
@@ -28,8 +27,7 @@
                 <div class="form-group">
                     <label>Artefacto Destino:</label>
                     <select id="selectArtefacto" class="caja-llave" style="color: #00ffcc; background: #000; padding: 5px; width: 100%;">
-                        <option value="Sinfononia">Sinfonía (Música)</option>
-                        <option value="Videoteca">Videoteca (Cine/Animación)</option>
+                        <option value="Sinfonia">Sinfonía (Música)</option> <option value="Videoteca">Videoteca (Cine/Animación)</option>
                         <option value="Tinta">Tinta (Manga/Cómic)</option>
                     </select>
                 </div>
@@ -41,9 +39,34 @@
 
                 <button id="btnGenerarPin" style="width:100%; margin-top:10px;">⚡ EMITIR PIN DE ACCESO (5,000 COP)</button>
                 <div id="pinResultado" class="pin-display" style="display:none;">---</div>
+                
+                <div id="contenedor-emision-ticket" class="modulo-mercante" style="margin-top: 20px; padding: 15px; border: 1px solid #333; background: #111;">
+                    <h3 style="color: #00ff00; font-family: 'Courier New', monospace; margin-top: 0;">🖨️ Despacho de Comprobante Nodal</h3>
+                    
+                    <div style="background: #000; padding: 10px; border: 1px dashed #444; margin-bottom: 15px;">
+                        <label style="color: #888; font-size: 11px; display: block; margin-bottom: 5px;">VISTA PREVIA DE MATRIZ DE IMPRESIÓN:</label>
+                        <pre id="vista-previa-ticket" style="font-family: 'Courier New', monospace; font-size: 12px; color: #fff; margin: 0; white-space: pre-wrap; background: #050505; padding: 10px;">[Genere un PIN para previsualizar el ticket térmico]</pre>
+                    </div>
+
+                    <div class="acciones-ticket" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label for="telefono-custodio" style="color: #aaa; font-family: sans-serif; font-size: 13px; min-width: 130px;">WhatsApp Custodio:</label>
+                            <input type="tel" id="telefono-custodio" placeholder="Ej: 57310XXXXXXX" style="background: #222; color: #fff; border: 1px solid #444; padding: 6px; font-family: monospace; flex-grow: 1;">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                            <button id="btn-imprimir-termico" type="button" style="background: #222; color: #00ff00; border: 1px solid #00ff00; padding: 10px; font-family: 'Courier New', monospace; cursor: pointer; flex: 1; font-weight: bold;">
+                                🖨️ Imprimir Recibo Fisico
+                            </button>
+                            
+                            <button id="btn-enviar-whatsapp" type="button" style="background: #128C7E; color: #fff; border: none; padding: 10px; font-family: 'Courier New', monospace; cursor: pointer; flex: 1; font-weight: bold;">
+                                📲 Enviar por WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- PANEL DERECHO: INTERACCIÓN CON EL INICIADO Y PUNTOS -->
             <div class="col-mercante panel-carga" style="border-color: #00ffcc;">
                 <h3 style="color: #00ffcc;">💳 Procesador de Certificados de Iniciados</h3>
                 <p style="font-size:0.85rem; color:#aaa;">Carga la Cédula Nodal del cliente para gestionar sus puntos de lealtad:</p>
@@ -56,11 +79,9 @@
                     <p><strong>Puntos Disponibles:</strong> <span id="lblPuntosIniciado" class="badge-puntos">0 pts</span></p>
                 </div>
 
-                <!-- ACCIONES DE COMERCIO -->
                 <div id="operacionesPuntos" style="display:none;">
                     <hr style="border-color:#222;">
                     
-                    <!-- ACCIÓN A: ACUMULAR -->
                     <div style="margin-bottom:15px;">
                         <h4 style="color:#39ff14; margin:5px 0;">➕ Registrar Intercambio Físico (Acumular)</h4>
                         <div style="display:flex; gap:10px;">
@@ -69,7 +90,6 @@
                         </div>
                     </div>
 
-                    <!-- ACCIÓN B: REDIMIR DESCUENTOS -->
                     <div>
                         <h4 style="color:#ff3333; margin:5px 0;">➖ Aplicar Matriz de Descuento (Redimir)</h4>
                         <div class="form-group">
@@ -88,145 +108,11 @@
             </div>
         </div>
 
-        <!-- CONSOLA DE SALIDA -->
         <div id="consolaMercante" class="status-box" style="border-color: #39ff14; margin-top:20px;">
             🪵 Sistema Mercante listo. Esperando operaciones en el patio comercial...
         </div>
     </div>
 
-    <script type="module">
-        import { MercanteLogica } from "../src/mercante-logica.js?v=999";
-
-        let certificadoCliente = null;
-
-        const monitor = (texto, err = false) => {
-            const c = document.getElementById("consolaMercante");
-            c.style.borderColor = err ? "#ff3333" : "#39ff14";
-            c.innerHTML = err ? `❌ ${texto}` : `🪵 ${texto}`;
-        };
-
-        // EVENTO: GENERACIÓN DE PIN (5,000 COP)
-        document.getElementById("btnGenerarPin").addEventListener("click", () => {
-            const artefacto = document.getElementById("selectArtefacto").value;
-            const mercante = document.getElementById("aliasMercante").value.trim();
-
-            if(!mercante) {
-                monitor("Se requiere el alias del Mercante para validar el origen del token.", true);
-                return;
-            }
-
-            const pinGenerado = MercanteLogica.generarPinArtefacto(artefacto, mercante);
-            const display = document.getElementById("pinResultado");
-            display.innerText = pinGenerado;
-            display.style.display = "block";
-
-            monitor(`PIN de acceso único forjado con éxito para el artefacto [${artefacto}]. Intercambio de 5,000 COP registrado.`);
-        });
-
-        // EVENTO: CARGAR EL CERTIFICADO DEL CLIENTE
-        document.getElementById("cargarCertificadoIniciado").addEventListener("change", (e) => {
-            if (!e.target.files[0]) return;
-            const lector = new FileReader();
-            lector.onload = (ev) => {
-                try {
-                    certificadoCliente = JSON.parse(ev.target.result);
-                    
-                    // Renderizamos los datos en pantalla
-                    document.getElementById("lblAliasIniciado").innerText = certificadoCliente.metadata?.alias_custodio || "Iniciado_Anonimo";
-                    document.getElementById("lblRangoIniciado").innerText = certificadoCliente.metadata?.rango_actual || "Iniciado";
-                    
-                    const puntos = certificadoCliente.registro_meritos_termodinamicos?.puntos_redencion || 0;
-                    document.getElementById("lblPuntosIniciado").innerText = `${puntos} pts`;
-
-                    document.getElementById("datosIniciado").style.display = "block";
-                    document.getElementById("operacionesPuntos").style.display = "block";
-                    
-                    monitor(`Certificado Nodal del Iniciado [${certificadoCliente.metadata?.alias_custodio}] cargado e indexado en la RAM.`);
-                } catch(err) {
-                    monitor("No se pudo parsear el certificado. Asegúrate de que sea un JSON válido de Macondo.", true);
-                }
-            };
-            lector.readAsText(e.target.files[0]);
-        });
-
-        // EVENTO: ACUMULAR PUNTOS por intercambio físico
-        document.getElementById("btnAcumularPuntos").addEventListener("click", () => {
-            if(!certificadoCliente) return;
-            const monto = parseInt(document.getElementById("montoIntercambio").value);
-
-            if(isNaN(monto) || monto <= 0) {
-                monitor("Ingresa un monto válido de transaccionalidad física en COP.", true);
-                return;
-            }
-
-            // Actualizamos la estructura usando el motor lógico
-            certificadoCliente = MercanteLogica.acumularPuntosIniciado(certificadoCliente, monto);
-            
-            // Actualizamos la interfaz
-            const puntosNuevos = certificadoCliente.registro_meritos_termodinamicos.puntos_redencion;
-            document.getElementById("lblPuntosIniciado").innerText = `${puntosNuevos} pts`;
-            document.getElementById("montoIntercambio").value = "";
-
-            monitor(`🎉 <strong>¡Puntos Acumulados!</strong> Cédula actualizada de forma asíncrona en la RAM.<br><br>
-            Descarga el archivo modificado y entrégaselo al iniciado para resguardar sus méritos.`, false);
-            
-            ofrecerDescargaActualizada();
-        });
-
-        // EVENTO: APLICAR MATRIZ DE DESCUENTOS (REDIMIR)
-        document.getElementById("btnCalcularRedimir").addEventListener("click", () => {
-            if(!certificadoCliente) return;
-            const tipo = document.getElementById("tipoProductoDescuento").value;
-            const precioBase = parseFloat(document.getElementById("montoOriginalProducto").value);
-
-            if(isNaN(precioBase) || precioBase <= 0) {
-                monitor("Digita el precio de lista original del producto.", true);
-                return;
-            }
-
-            try {
-                // Ejecutamos la redención criptográfica
-                const resultado = MercanteLogica.redimirDescuentoCertificado(certificadoCliente, tipo, precioBase);
-                certificadoCliente = resultado.certificadoActualizado;
-
-                // Actualizamos la pantalla
-                document.getElementById("lblPuntosIniciado").innerText = `${certificadoCliente.registro_meritos_termodinamicos.puntos_redencion} pts`;
-                document.getElementById("montoOriginalProducto").value = "";
-
-                monitor(`🔓 <strong>¡DESCUENTO APLICADO SOBERANAMENTE!</strong><br><br>
-                Tasa Evaluada: <span style='color:#00ffcc;'>${resultado.detalles.tasa_aplicada}</span><br>
-                Descuento Otorgado: <span style='color:#39ff14;'>$${resultado.detalles.descuento_cop.toFixed(2)} COP</span><br>
-                <strong>Valor Neto a Cobrar en Patio: <span style='color:#39ff14; font-size:1.1rem;'>$${resultado.detalles.precio_final_cop.toFixed(2)} COP</span></strong><br><br>
-                Costo deducido: ${resultado.detalles.puntos_costo} puntos de redención.`);
-
-                ofrecerDescargaActualizada();
-
-            } catch(err) {
-                monitor(err.message, true);
-            }
-        });
-
-        // UTILIDAD: Genera la descarga local de la cédula actualizada
-        function ofrecerDescargaActualizada() {
-            // Eliminamos links de descarga duplicados si ya existen
-            const viejoLink = document.getElementById("btnDescargarCedulaActualizada");
-            if(viejoLink) viejoLink.remove();
-
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(certificadoCliente, null, 2));
-            const btnDescarga = document.createElement("a");
-            btnDescarga.id = "btnDescargarCedulaActualizada";
-            btnDescarga.setAttribute("href", dataStr);
-            btnDescarga.setAttribute("download", `cedula_${certificadoCliente.metadata?.alias_custodio || "iniciado"}_actualizada.json`);
-            btnDescarga.className = "btn-nav";
-            btnDescarga.style.borderColor = "#00ffcc";
-            btnDescarga.style.color = "#00ffcc";
-            btnDescarga.style.marginTop = "15px";
-            btnDescarga.style.textAlign = "center";
-            btnDescarga.style.display = "block";
-            btnDescarga.innerHTML = "💾 DESCARGAR CÉDULA NODAL ACTUALIZADA";
-
-            document.getElementById("datosIniciado").appendChild(btnDescarga);
-        }
-    </script>
+    <script type="module" src="./boton-interfaz/boton-punto-pago.js?v=0.1"></script>
 </body>
 </html>
