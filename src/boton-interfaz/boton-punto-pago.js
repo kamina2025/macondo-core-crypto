@@ -3,9 +3,11 @@
  * Ubicación sugerida: /tu-raiz/boton-interfaz/boton-punto-pago.js
  */
 import { MercanteLogica } from "../mercante-logica.js?v=999";
+
 // Variables de estado en la RAM de la vista
 let certificadoCliente = null;
 let ticketActualTexto = "";
+let transaccionActiva = null; // Almacena el payload estructurado para la firma PGP
 
 const monitor = (texto, err = false) => {
     const c = document.getElementById("consolaMercante");
@@ -16,10 +18,6 @@ const monitor = (texto, err = false) => {
 
 /**
  * Función constructora del diseño ASCII adaptada para terminales térmicas (58mm) y WhatsApp
- */
-/**
- * Función constructora del diseño ASCII adaptada para terminales térmicas (58mm) y WhatsApp
- * CORREGIDA: Error de typo en variable de línea divisoria solucionado.
  */
 function construirTextoTicketEstandar(datos, pin, artefacto) {
     const anchoTicket = 32;
@@ -49,7 +47,7 @@ function construirTextoTicketEstandar(datos, pin, artefacto) {
     ticket += `Puntos Activos: ${datos.puntos_redencion} pts\n`;
     ticket += `Hash de Consenso:\n`;
     ticket += `${datos.ultimo_hash_consenso.substring(0, 20)}...\n`;
-    ticket += `${lineaDivisoria}\n`; // <-- CORREGIDO: Aquí estaba el error de escritura
+    ticket += `${lineaDivisoria}\n`; 
     ticket += "   EL CODIGO ES LA LEY EN EL PATIO  \n";
     ticket += `${lineaDivisoria}\n`;
     return ticket;
@@ -58,7 +56,7 @@ function construirTextoTicketEstandar(datos, pin, artefacto) {
 /**
  * Orquesta la actualización dinámica de la previsualización del ticket en base al estado del cliente
  */
-function refrescarVistaPreviaTicket(pinGenerado, artefactoElegido) {
+function refrescarVistaPreviaTicket(pinGenerado, artefactoElegido, aliasMercante) {
     const datosPasaporteAdaptados = {
         nombre: certificadoCliente?.metadata?.alias_custodio || "Iniciado Anonimo",
         metadata: {
@@ -67,6 +65,15 @@ function refrescarVistaPreviaTicket(pinGenerado, artefactoElegido) {
         },
         ultimo_hash_consenso: certificadoCliente?.registro_meritos_termodinamicos?.ultimo_hash_consenso || "0x00000000000000000000",
         puntos_redencion: certificadoCliente?.registro_meritos_termodinamicos?.puntos_redencion || 0
+    };
+
+    // Compilar el objeto de transacción estructurado para pasárselo al generador QR PGP
+    transaccionActiva = {
+        ultimo_hash_consenso: datosPasaporteAdaptados.ultimo_hash_consenso,
+        pin_verificacion: pinGenerado,
+        monto_puntos: datosPasaporteAdaptados.puntos_redencion,
+        id_mercante: aliasMercante,
+        timestamp: Math.floor(Date.now() / 1000)
     };
 
     ticketActualTexto = construirTextoTicketEstandar(datosPasaporteAdaptados, pinGenerado, artefactoElegido);
@@ -117,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         display.style.display = "block";
 
         // Actualizamos la matriz visual en caliente para impresión o envío
-        refrescarVistaPreviaTicket(pinGenerado, artefacto);
+        refrescarVistaPreviaTicket(pinGenerado, artefacto, mercante);
 
         monitor(`PIN de acceso único forjado con éxito para el artefacto [${artefacto}]. Intercambio de 5,000 COP registrado.`);
     });
@@ -204,35 +211,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 5. EVENTO DE IMPRESIÓN IMPRESORA TÉRMICA
-    document.getElementById('btn-imprimir-termico').addEventListener('click', () => {
-        if (!ticketActualTexto) {
+    // 5. EVENTO DE IMPRESIÓN ASÍNCRONA CON SELLO QR PGP (58mm)
+    document.getElementById('btn-imprimir-termico').addEventListener('click', async () => {
+        if (!ticketActualTexto || !transaccionActiva) {
             alert("⚠️ Primero debe forjar un PIN para compilar la matriz de impresión.");
             return;
         }
-        const ventanaImpresion = window.open('', '_blank', 'width=300,height=400');
-        ventanaImpresion.document.write(`
-            <html>
-            <head>
-                <style>
-                    body { font-family: 'Courier New', Courier, monospace; font-size: 12px; margin: 0; padding: 10px; background:#fff; color:#000; }
-                    pre { margin: 0; white-space: pre-wrap; }
-                </style>
-            </head>
-            <body>
-                <pre>${ticketActualTexto}</pre>
-                <script>
-                    window.onload = function() { window.print(); window.close(); }
-                </script>
-            </body>
-            </html>
-        `);
-        ventanaImpresion.document.close();
+
+        // Recuperamos la clave privada almacenada temporalmente bajo la sesión blindada en la RAM
+        const llavePrivadaArmored = sessionStorage.getItem("macondo_session_token"); 
+        if (!llavePrivadaArmored) {
+            monitor("🚨 Error: No se detectó ninguna llave de Mercante en RAM. Inicia sesión en el portal.", true);
+            alert("No estás autenticado criptográficamente en este nodo.");
+            return;
+        }
+
+        const fraseAcceso = prompt("[Seguridad] Introduce tu frase de acceso para firmar el Sello QR:");
+        if (!fraseAcceso) return;
+
+        try {
+            monitor("🔒 Computando firma asíncrona desprendida PGP en RAM...");
+            
+            // Forjar el string contenedor (Payload Base64 + Firma PGP compactada)
+            const stringQR = await MacondoQRTermico.forjarSelloQR(transaccionActiva, llavePrivadaArmored, fraseAcceso);
+
+            // Desplegar ventana optimizada para papel térmico inyectando qrcode.js en caliente
+            const ventanaImpresion = window.open('', '_blank', 'width=320,height=600');
+            ventanaImpresion.document.write(`
+                <html>
+                <head>
+                    <title>Imprimir Ticket Macondo</title>
+                    <style>
+                        body { font-family: 'Courier New', Courier, monospace; font-size: 11px; margin: 0; padding: 10px; background:#fff; color:#000; }
+                        pre { margin: 0; white-space: pre-wrap; word-break: break-all; }
+                        #ticket-qr-container { margin: 12px auto; display: flex; justify-content: center; align-items: center; }
+                        #ticket-qr-container img, #ticket-qr-container canvas { max-width: 140px !important; max-height: 140px !important; }
+                        .centrado { text-align: center; }
+                    </style>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+                </head>
+                <body>
+                    <pre>${ticketActualTexto}</pre>
+                    <div class="centrado" style="font-size: 9px; margin-top:5px;"><b>--- SELLO DIGITAL OFFLINE ---</b></div>
+                    <div id="ticket-qr-container"></div>
+                    <pre style="font-size: 8px; color: #333; text-align: center; padding: 0 5px;">${stringQR}</pre>
+                    <script>
+                        window.onload = function() {
+                            new QRCode(document.getElementById("ticket-qr-container"), {
+                                text: "${stringQR}",
+                                width: 140,
+                                height: 140,
+                                correctLevel : QRCode.CorrectLevel.M
+                            });
+                            // Esperar medio segundo para que renderice el lienzo visual y mandar al hardware
+                            setTimeout(() => { window.print(); window.close(); }, 500);
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            ventanaImpresion.document.close();
+            monitor("🖨️ Matriz térmica compilada y enviada con éxito a la ticketera.");
+
+        } catch (error) {
+            monitor(`Error de firma: ${error.message}`, true);
+            alert("No se pudo procesar la firma: Contraseña incorrecta o bloque corrupto.");
+        }
     });
 
-    // 6. EVENTO ENVIAR COMPROBANTE WHATSAPP
-    document.getElementById('btn-enviar-whatsapp').addEventListener('click', () => {
-        if (!ticketActualTexto) {
+    // 6. EVENTO ENVIAR COMPROBANTE CON RESPALDO CRIPTOGRÁFICO A WHATSAPP
+    document.getElementById('btn-enviar-whatsapp').addEventListener('click', async () => {
+        if (!ticketActualTexto || !transaccionActiva) {
             alert("⚠️ Primero debe forjar un PIN para compilar el mensaje.");
             return;
         }
@@ -241,47 +290,34 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("⚠️ Ingrese el número de WhatsApp del custodio/iniciado (con código de país, ej: 57310...).");
             return;
         }
-        const mensajeCodificado = encodeURIComponent(ticketActualTexto);
-        const url = `https://api.whatsapp.com/send?phone=${telefono}&text=${mensajeCodificado}`;
-        window.open(url, '_blank');
+
+        const llavePrivadaArmored = sessionStorage.getItem("macondo_session_token");
+        if (!llavePrivadaArmored) {
+            alert("🚨 Error: No se detectó ninguna llave de Mercante en RAM.");
+            return;
+        }
+
+        const fraseAcceso = prompt("[Seguridad] Desbloquea la RAM para estampar la firma digital en el texto plano:");
+        if (!fraseAcceso) return;
+
+        try {
+            monitor("🔒 Firmando payload para el canal omnicanal móvil...");
+            const stringQR = await MacondoQRTermico.forjarSelloQR(transaccionActiva, llavePrivadaArmored, fraseAcceso);
+
+            // Combinamos el texto ASCII limpio con el string criptográfico unificado
+            const mensajeCompleto = 
+`${ticketActualTexto}
+*🔒 SELLO DE VALIDACIÓN OFFLINE PGP:*
+\`${stringQR}\`
+_Copie el string anterior en el Altar de Validación para verificar la autenticidad sin internet._`;
+
+            const mensajeCodificado = encodeURIComponent(mensajeCompleto);
+            const url = `https://api.whatsapp.com/send?phone=${telefono}&text=${mensajeCodificado}`;
+            window.open(url, '_blank');
+            monitor("📲 Comprobante firmado asíncronamente y despachado a la pasarela móvil.");
+
+        } catch (error) {
+            monitor(`Fallo en el despacho omnicanal: ${error.message}`, true);
+        }
     });
 });
-/**
- * Dispara la impresión/visualización del ticket con el Sello QR integrado
- */
-async function procesarImpresionTicketSoberano(transaccionActual) {
-    // Recuperamos la clave privada almacenada temporalmente bajo la sesión blindada
-    const llavePrivadaArmored = sessionStorage.getItem("macondo_session_token"); // El estándar unificado en RAM
-    const fraseAcceso = prompt("[Seguridad] Introduce tu frase de acceso para firmar analógicamente el ticket:");
-
-    if (!llavePrivadaArmored || !fraseAcceso) {
-        alert("Acceso denegado. No se puede firmar criptográficamente el comprobante.");
-        return;
-    }
-
-    console.log("[*] Generando Sello PGP desprendido para el soporte analógico...");
-    
-    // Generar el string compacto combinando metadatos y firma asíncrona
-    const stringQR = await MacondoQRTermico.forjarSelloQR(
-        transaccionActual, 
-        llavePrivadaArmored, 
-        fraseAcceso
-    );
-
-    // Limpiar el contenedor del QR anterior en el nodo del DOM
-    const contenedorQR = document.getElementById("ticket-qr-container");
-    contenedorQR.innerHTML = "";
-
-    // Invocar qrcode.js configurando parámetros de alta tolerancia a errores (Correct Level 'M' o 'Q')
-    // para compensar imperfecciones físicas en el papel térmico o arrugas.
-    new QRCode(contenedorQR, {
-        text: stringQR,
-        width: 180,  // Tamaño óptimo para el ancho de papel de 58mm
-        height: 180,
-        colorDark : "#000000",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.M // Nivel medio: permite hasta 15% de daño en papel
-    });
-
-    console.log("[🟢] Sello QR Analógico incrustado con éxito. Listo para el corte térmico.");
-}

@@ -15,9 +15,13 @@ const MacondoQRTermico = {
      * @param {string} passphrase - Frase de acceso para desbloquear la clave privada en RAM
      * @returns {Promise<string>} String optimizado para el código QR
      */
+   /**
+     * 1. FORJA DEL SELLO QR (Emisión en el Patio Comercial)
+     * Genera la firma desprendida y limpia las cabeceras para bajar la densidad del QR.
+     */
     async forjarSelloQR(txData, privateKeyArmored, passphrase) {
         try {
-            // 1. Estructurar el payload de forma ultra-compacta para ahorrar bytes en el QR
+            // Estructurar el payload de forma ultra-compacta para ahorrar bytes
             const payloadCompacto = {
                 h: txData.ultimo_hash_consenso,
                 p: txData.pin_verificacion,
@@ -26,36 +30,35 @@ const MacondoQRTermico = {
                 id: txData.id_mercante
             };
 
-            const textoA堅irmar = JSON.stringify(payloadCompacto);
+            const textoAFirmar = JSON.stringify(payloadCompacto);
 
-            // 2. Leer y desbloquear la clave privada en la memoria RAM de forma segura
+            // Leer y desbloquear la clave privada en la RAM de forma segura
             const privateKey = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored });
             const privateKeyDesbloqueada = await openpgp.decryptKey({
                 privateKey,
                 passphrase
             });
 
-            // 3. Crear el mensaje de texto claro para firmar
-            const mensajeTexto = await openpgp.createCleartextMessage({ text: textoA堅irmar });
+            // Crear el mensaje de texto claro para firmar
+            const mensajeTexto = await openpgp.createCleartextMessage({ text: textoAFirmar });
 
-            // 4. Generar la firma PGP desprendida (Detached Signature)
+            // Generar la firma PGP desprendida (Detached)
             const firmaDesprendida = await openpgp.sign({
                 message: mensajeTexto,
                 signingKeys: privateKeyDesbloqueada,
-                detached: true // Crucial para mantener el payload y la firma separados
+                detached: true
             });
 
-            // 5. Empaquetar todo en una estructura optimizada.
-            // Removemos los saltos de línea redundantes de la armadura PGP para reducir densidad en el QR
+            // CORRECCIÓN: Limpieza exacta de las armaduras ASCII de PGP sin romper el motor Regex
             const firmaMinimizada = firmaDesprendida
-                .replace(/-----BEGIN PGP SIGNATURE-----/\g, "")
-                .replace(/-----END PGP SIGNATURE-----/\g, "")
-                .replace(/\s+/g, ""); // Remueve espacios y saltos de línea
+                .replace(/-----BEGIN PGP SIGNATURE-----/g, "")
+                .replace(/-----END PGP SIGNATURE-----/g, "")
+                .replace(/\s+/g, ""); // Remueve saltos de línea y espacios
 
-            // Retornamos un string unificado por un delimitador seguro (|) 
-            // Formato: PAYLOAD_JSON_BASE64|FIRMA_RAW_BASE64
-            const payloadBase64 = btoa(unescape(encodeURIComponent(textoA堅irmar)));
+            // Convertir el payload JSON a Base64 nativo
+            const payloadBase64 = btoa(unescape(encodeURIComponent(textoAFirmar)));
             
+            // Retornamos el string unificado listo para el QR
             return `${payloadBase64}|${firmaMinimizada}`;
 
         } catch (error) {
