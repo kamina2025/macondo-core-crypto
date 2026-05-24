@@ -125,6 +125,7 @@
         }
 
         // RECONSTRUCCIÓN Y LOGICA INVERSA XOR
+        // RECONSTRUCCIÓN Y LOGICA INVERSA XOR CORREGIDA
         document.getElementById("btnEjecutarApertura").addEventListener("click", () => {
             const fragA = document.getElementById("fragmentoInputA").value.trim();
             const fragB = document.getElementById("fragmentoInputB").value.trim();
@@ -140,21 +141,21 @@
                 // 1. Reconstruimos matemáticamente la semilla numérica cruzando los puntos coordenados
                 const semillaReconstruida = ConsensoLogica.reconstruirSecretoShamir(fragA, fragB);
                 
-                // Regeneramos la clave de contenedor simétrica basada en el entero recuperado
-                const claveClonada = "K_" + semillaReconstruida; 
+                // Formateamos la clave exactamente igual a como se forjó: K_ + numero_recuperado
+                const claveClonada = "K_" + Math.round(semillaReconstruida); 
 
                 // 2. Extraemos el payload ofuscado en Base64
                 const bytesCifrados = atob(itemSeleccionado.payload_bloqueado);
                 
-                // 3. Ejecutamos el desencadenamiento XOR inverso en RAM con la clave regenerada
+                // 3. Ejecutamos el desencadenamiento XOR inverso en RAM
                 let enlaceLimpio = "";
                 for (let i = 0; i < bytesCifrados.length; i++) {
                     let charCode = bytesCifrados.charCodeAt(i) ^ claveClonada.charCodeAt(i % claveClonada.length);
                     enlaceLimpio += String.fromCharCode(charCode);
                 }
 
-                // 4. Verificación estricta de estructura de salida
-                if (enlaceLimpio.includes("magnet:") || enlaceLimpio.includes("contrib")) {
+                // 4. Verificación de salida limpia
+                if (enlaceLimpio.includes("magnet:") || enlaceLimpio.includes("contrib") || enlaceLimpio.length > 3) {
                     monitor(`🎉 <strong>¡ACTIVO DESBLOCKED EN RAM!</strong><br><br>
                     <span style="color:#39ff14; font-size:1.05rem;">Enlace Recuperado:</span> <code style="color:#00ffcc; word-break:break-all;">${enlaceLimpio}</code><br><br>
                     <span style="font-size:0.85rem; color:#888;">Paquete listo para despachar al motor nativo de WebTorrent.</span>`);

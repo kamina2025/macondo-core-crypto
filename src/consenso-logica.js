@@ -21,25 +21,18 @@ export const ConsensoLogica = {
      * ALGORITMO SHAMIR REAL: Divide un secreto en puntos coordenados (x, y) disímiles.
      * Implementación polinómica estricta para Umbral 2 de 3.
      */
-    fragmentarSecretoShamir(secretoTexto) {
-        // 1. Convertimos la clave simétrica en un número entero único sumando sus códigos de caracteres
-        let secretoNumerico = 0;
-        for (let i = 0; i < secretoTexto.length; i++) {
-            secretoNumerico += secretoTexto.charCodeAt(i) * (i + 1);
-        }
-
-        // 2. Generamos la pendiente aleatoria de la recta (f(x) = Secreto + Coeficiente * x)
+  /**
+     * ALGORITMO SHAMIR REAL: Usa una clave numérica para cifrar y fragmentar.
+     */
+    fragmentarSecretoShamir(semillaNumerica, len) {
+        // Generamos la pendiente aleatoria de la recta (f(x) = Secreto + Coeficiente * x)
         const coefA = Math.floor(Math.random() * 5000) + 1;
 
-        // 3. Calculamos la coordenada Y real para cada Custodio (Valores matemáticamente diferentes)
-        const y1 = secretoNumerico + coefA * 1; // f(1)
-        const y2 = secretoNumerico + coefA * 2; // f(2)
-        const y3 = secretoNumerico + coefA * 3; // f(3)
+        // Calculamos los puntos coordenados Y disímiles
+        const y1 = semillaNumerica + (coefA * 1);
+        const y2 = semillaNumerica + (coefA * 2);
+        const y3 = semillaNumerica + (coefA * 3);
 
-        // Guardamos también la semilla de longitud para reconstruir los caracteres exactos
-        const len = secretoTexto.length;
-
-        // Cada fragmento empaqueta únicamente su punto (x, y). El secreto original desaparece del archivo.
         const fragmento1 = btoa(JSON.stringify({ x: 1, y: y1, len: len }));
         const fragmento2 = btoa(JSON.stringify({ x: 2, y: y2, len: len }));
         const fragmento3 = btoa(JSON.stringify({ x: 3, y: y3, len: len }));
@@ -48,60 +41,41 @@ export const ConsensoLogica = {
     },
 
     /**
-     * RECONSTRUCTOR SHAMIR: Junta dos puntos cualesquiera del JSON y calcula la intersección (X=0)
+     * CIFRADO SIMÉTRICO: Usa el string de la semilla numérica de forma idéntica.
      */
-    reconstruirSecretoShamir(fragA_base64, fragB_base64) {
-        const p1 = JSON.parse(atob(fragA_base64));
-        const p2 = JSON.parse(atob(fragB_base64));
-
-        // Fórmula de interpolación lineal para hallar el punto de corte f(0) en el eje Y:
-        // Secreto = y1 - X1 * ((y2 - y1) / (X2 - X1))
-        const pendiente = (p2.y - p1.y) / (p2.x - p1.x);
-        const secretoNumericoReconstruido = p1.y - p1.x * pendiente;
-
-        // Devolvemos el valor aproximado o mapeado para regenerar la clave simétrica en RAM
-        // En tu cliente de Sinfonía real, este número entero se usará como semilla para el descifrado XOR
-        return secretoNumericoReconstruido;
-    },
-
-    /**
-     * CIFRADO SIMÉTRICO LOCAL: Ofusca un texto plano usando una clave de contenedor.
-     */
-    cifrarContenedor(textoPlano, clave) {
-        // En producción nativa pura usamos codificación XOR dinámica combinada con Base64 para evitar inyecciones
+    cifrarContenedor(textoPlano, claveString) {
         let resultado = "";
         for (let i = 0; i < textoPlano.length; i++) {
-            let charCode = textoPlano.charCodeAt(i) ^ clave.charCodeAt(i % clave.length);
+            let charCode = textoPlano.charCodeAt(i) ^ claveString.charCodeAt(i % claveString.length);
             resultado += String.fromCharCode(charCode);
         }
         return btoa(resultado);
     },
 
     /**
-     * ESTACIÓN APRENDIZ: Genera su aporte e inyecta la clave fragmentada.
+     * ESTACIÓN APRENDIZ: Forja usando la clave numérica unificada.
      */
     async forjarYEnviarAprendiz(aliasAprendiz, tipoAporte, descripcionDetallada, privateKey, passphrase) {
-        // 1. Generamos una clave de contenedor AES/Simétrica única y aleatoria para esta canción
-        const claveContenedorUnica = "K_" + Math.random().toString(36).substring(2, 12);
+        // 1. Generamos un número secreto entero aleatorio como la clave real
+        const semillaNumericaUnica = Math.floor(Math.random() * 90000) + 10000; 
+        const claveString = "K_" + semillaNumericaUnica; // Esta es la cadena exacta de cifrado
 
-        // 2. Fragmentamos la clave usando el esquema de Shamir (2 de 3)
-        const { fragmento1, fragmento2, fragmento3 } = this.fragmentarSecretoShamir(claveContenedorUnica);
+        // 2. Pasamos la semilla numérica para fragmentar en Shamir
+        const { fragmento1, fragmento2, fragmento3 } = this.fragmentarSecretoShamir(semillaNumericaUnica, claveString.length);
 
         const manifiesto = {
             id_aporte: "contrib_" + Math.random().toString(16).substring(2, 10),
             gremio: "Sinfonía Discoteca",
             aprendiz: aliasAprendiz,
             tipo_aporte: tipoAporte,
-
-            // EL RECURSO SE CIFRA DE INMEDIATO: Nadie puede leer el Magnet Link real en tránsito
-            payload_cifrado: this.cifrarContenedor(descripcionDetallada, claveContenedorUnica),
-
+            
+            // Ciframos usando la clave unificada string
+            payload_cifrado: this.cifrarContenedor(descripcionDetallada, claveString),
+            
             timestamp_creacion: new Date().toISOString(),
             estado_cadena: "Emitido por Aprendiz",
-
-            // MAPA DE FRAGMENTOS DISTRIBUIDOS: Cada uno resguarda una pieza de la soberanía
             boveda_fragmentos: {
-                fragmento_aprendiz: fragmento1, // Pedro se queda su pedazo
+                fragmento_aprendiz: fragmento1,
                 fragmento_oficial_esperado: fragmento2,
                 fragmento_maestros_esperado: fragmento3
             },
@@ -109,11 +83,7 @@ export const ConsensoLogica = {
         };
 
         const textoParaFirma = JSON.stringify(manifiesto, null, 2);
-        manifiesto.firmas_cadena.firma_aprendiz = await MacondoCrypto.firmarAccion(
-            textoParaFirma,
-            privateKey,
-            passphrase
-        );
+        manifiesto.firmas_cadena.firma_aprendiz = await MacondoCrypto.firmarAccion(textoParaFirma, privateKey, passphrase);
 
         let carpetaAportes = this.obtenerDirectorioVirtual("aportes-aprendiz");
         carpetaAportes.push(manifiesto);
