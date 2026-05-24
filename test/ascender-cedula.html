@@ -4,35 +4,55 @@
         <meta charset="UTF-8" />
         <title>Macondo Core - Altar de Ascenso</title>
         <link rel="stylesheet" href="../css/terminal.css">
+        <style>
+            /* Ajustes finos para mantener la rejilla compacta y legible */
+            .panel-carga { margin-bottom: 15px; }
+            .caja-password {
+                background: #000;
+                color: #ff3333;
+                border: 1px dashed #ff3333;
+                font-family: monospace;
+                padding: 6px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        </style>
     </head>
     <body>
-        <div class="terminal">
+        <div class="terminal ancho-extendido">
             <a href="index.html" class="btn-back">← Volver al Menú Central</a>
             <h2>[ ALTAR DE VALIDACIÓN Y ASCENSO ]</h2>
             <p>Mecanismo criptográfico para certificar la evolución de un nodo hacia el rango de <strong>Aprendiz</strong>.</p>
             <hr style="border-color: #222; margin-bottom: 20px" />
 
             <!-- SECCIÓN 1: CÉDULA DEL INICIADO -->
-            <div class="panel-carga">
+            <div class="panel-carga panel-soberano">
                 <h3>1. Cédula del Aspirante (Iniciado)</h3>
-                <p>Sube el archivo JSON de la identidad que va a recibir el ascenso generacional:</p>
+                <p style="font-size:0.85rem; color:#aaa;">Sube el archivo JSON de la identidad que va a recibir el ascenso generacional:</p>
                 <input type="file" id="fileIniciado" accept=".json" />
-                <div id="infoIniciado" class="status-box" style="display: none"></div>
+                <div id="infoIniciado" class="status-box" style="display: none; margin-top: 10px; border-color: #39ff14;"></div>
             </div>
 
             <!-- SECCIÓN 2: CÉDULA DEL AUTORIZADOR -->
-            <div class="panel-carga">
-                <h3>2. Cédula del Validador (Oficial o Maestro)</h3>
-                <p>Sube la cédula con autoridad vigente encargada de firmar la transición del linaje:</p>
+            <div class="panel-carga panel-carga-critica" style="border-color: #ff3333;">
+                <h3 style="color: #ff3333;">2. Cédula del Validador (Oficial o Maestro)</h3>
+                <p style="font-size:0.85rem; color:#aaa;">Sube la cédula con autoridad vigente encargada de firmar la transición del linaje:</p>
                 <input type="file" id="fileValidador" accept=".json" /><br /><br />
-                <label>Frase de Acceso del Validador:</label><br />
-                <input type="password" id="passValidador" placeholder="Contraseña de su llave privada" />
-                <div id="infoValidador" class="status-box" style="display: none"></div>
+                
+                <div class="form-group">
+                    <label style="color: #ff3333;">Frase de Acceso del Validador:</label>
+                    <input type="password" id="passValidador" class="caja-password" placeholder="Contraseña de la llave privada PGP" />
+                </div>
+                <div id="infoValidador" class="status-box" style="display: none; margin-top: 10px; border-color: #ff3333;"></div>
             </div>
 
             <!-- ACCIÓN DE FIRMA CRIPTOGRÁFICA -->
-            <button id="btnFirmarAscenso">⚙️ EJECUTAR FIRMA DE ASCENSO A APRENDIZ</button>
+            <button id="btnFirmarAscenso" style="width: 100%; margin-top: 10px; font-weight: bold;">⚙️ EJECUTAR FIRMA DE ASCENSO A APRENDIZ</button>
 
+            <!-- CONTENEDOR DINÁMICO PARA DESCARGA -->
+            <div id="contenedorDescargaRito" style="margin-top: 15px;"></div>
+
+            <!-- CONSOLA DE LOGS -->
             <div id="logConsola" class="status-box" style="margin-top: 20px; border-color: #00ffcc">
                 🪵 Consola del Altar: Esperando la carga de los certificados correspondientes...
             </div>
@@ -54,10 +74,10 @@
 
             const mostrarInformacion = (json, elementoInfo) => {
                 elementoInfo.style.display = "block";
-                elementoInfo.innerHTML = `<strong>Nodo:</strong> ${json.metadata.alias_custodio}<br>
-                                          <strong>Rango Actual:</strong> ${json.metadata.rango_actual}<br>
-                                          <strong>Generación:</strong> ${json.metadata.generacion_actual}`;
-                log(`Archivo de ${json.metadata.alias_custodio} cargado en memoria RAM.`);
+                elementoInfo.innerHTML = `<strong>Nodo:</strong> ${json.metadata?.alias_custodio || "Anónimo"}<br>
+                                          <strong>Rango Actual:</strong> ${json.metadata?.rango_actual || "Desconocido"}<br>
+                                          <strong>Generación:</strong> ${json.metadata?.generacion_actual || "0"}`;
+                log(`Archivo de ${json.metadata?.alias_custodio || "nodo"} cargado en memoria RAM.`);
             };
 
             // Escuchadores de carga usando el módulo desacoplado
@@ -90,9 +110,30 @@
                     return;
                 }
 
+                // Limpiamos descargas previas si las hay
+                const viejoBtn = document.getElementById("btnDescargarEvolucionado");
+                if (viejoBtn) viejoBtn.remove();
+
                 // Delegamos todo el rito matemático a la lógica desacoplada
-                await AscenderLogica.ejecutarAscenso(datosIniciado, datosValidador, claveValidador, log);
+                await AscenderLogica.ejecutarAscenso(datosIniciado, datosValidador, claveValidador, log, ofrecerDescargaPasaporte);
             });
+
+            // Función de retorno para inyectar el botón de descarga cuando openpgp termine su firma
+            function ofrecerDescargaPasaporte(jsonFinal) {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonFinal, null, 2));
+                const btnDescarga = document.createElement("a");
+                btnDescarga.id = "btnDescargarEvolucionado";
+                btnDescarga.setAttribute("href", dataStr);
+                btnDescarga.setAttribute("download", `cedula_${jsonFinal.metadata.alias_custodio}_EVOLUCIONADA.json`);
+                btnDescarga.className = "btn-nav";
+                btnDescarga.style.borderColor = "#39ff14";
+                btnDescarga.style.color = "#39ff14";
+                btnDescarga.style.textAlign = "center";
+                btnDescarga.style.display = "block";
+                btnDescarga.innerHTML = "💾 DESCARGAR PASAPORTE NODAL TRANSFORMAO";
+
+                document.getElementById("contenedorDescargaRito").appendChild(btnDescarga);
+            }
         </script>
     </body>
 </html>

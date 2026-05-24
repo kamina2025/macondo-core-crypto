@@ -26,9 +26,22 @@ export const AscenderLogica = {
     },
 
     /**
-     * Transiciona el linaje, ejecuta la firma PGP desprendida y descarga la cédula mutada.
+     * FUNCIÓN AUXILIAR: Genera el sello comercial necesario para que la Mesa Mercante
+     * no rechace la nueva cédula evolucionada por inconsistencia de metadatos.
      */
-    async ejecutarAscenso(datosIniciado, datosValidador, claveValidador, logFn) {
+    generarSelloSeguridad(certificado) {
+        const alias = certificado.metadata?.alias_custodio || "anonimo";
+        const puntos = certificado.registro_meritos_termodinamicos?.puntos_redencion || 0;
+        const subCadenaClave = certificado.certificado_actual?.pgp_public_key?.substring(30, 60) || "MACONDO_KEY";
+        const payloadSello = `${alias}|${puntos}|${subCadenaClave}`;
+        return btoa(payloadSello).substring(0, 32);
+    },
+
+    /**
+     * Transiciona el linaje, ejecuta la firma PGP desprendida y descarga la cédula mutada.
+     * Modificada para acoplarse con el callback de la interfaz y el sellado de puntos.
+     */
+    async ejecutarAscenso(datosIniciado, datosValidador, claveValidador, logFn, callbackDescarga) {
         logFn("Iniciando transición de linaje criptográfico... Procesando en RAM.");
 
         try {
@@ -77,17 +90,28 @@ export const AscenderLogica = {
             };
 
             // Almacenar las firmas en la red de confianza e historial
+            if (!nuevaCedulaAprendiz.autorizaciones) nuevaCedulaAprendiz.autorizaciones = {};
             nuevaCedulaAprendiz.autorizaciones.firma_oficial_validador = firmaGeneracional;
+            
             if (!nuevaCedulaAprendiz.linaje_generacional) nuevaCedulaAprendiz.linaje_generacional = [];
             nuevaCedulaAprendiz.linaje_generacional.push(eslabonHistorico);
 
+            // BLINDAJE DE INTEGRIDAD: Re-sellamos el monedero para que asimile los nuevos metadatos de rango
+            if (!nuevaCedulaAprendiz.registro_meritos_termodinamicos) nuevaCedulaAprendiz.registro_meritos_termodinamicos = {};
+            nuevaCedulaAprendiz.registro_meritos_termodinamicos.ultimo_hash_consenso = this.generarSelloSeguridad(nuevaCedulaAprendiz);
+
             logFn("🟢 [ÉXITO CRIPTOGRÁFICO] Ascenso firmado. Preparando descarga del nuevo archivo...");
 
-            // 4. Descargar el nuevo certificado evolutivo de forma local
+            // 4. Descargar el nuevo certificado evolutivo de forma local usando tu método nativo
             this.descargarJSON(
                 JSON.stringify(nuevaCedulaAprendiz, null, 2), 
                 `cedula_${nuevaCedulaAprendiz.metadata.alias_custodio}_aprendiz.json`
             );
+
+            // 5. Si la interfaz visual requiere ejecutar lógica extra post-descarga, disparamos el callback
+            if (typeof callbackDescarga === "function") {
+                callbackDescarga(nuevaCedulaAprendiz);
+            }
 
             logFn("🟢 Proceso culminado. Cédula evolutiva de Rango Aprendiz descargada de forma segura.");
 
