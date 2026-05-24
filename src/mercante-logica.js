@@ -46,22 +46,18 @@ export const MercanteLogica = {
     acumularPuntosIniciado(certificadoIniciado, valorTransaccion) {
         const puntosA_Sumar = Math.floor(valorTransaccion / 1000);
 
-        // 1. Aseguramos que exista el contenedor principal de méritos
-        if (!certificadoIniciado.registro_meritos_termodinamicos) {
-            certificadoIniciado.registro_meritos_termodinamicos = {};
-        }
+        // Aseguramos la existencia de TODO el objeto y sus sub-propiedades de un solo golpe
+        certificadoIniciado.registro_meritos_termodinamicos = certificadoIniciado.registro_meritos_termodinamicos || {};
         
-        // 2. Aseguramos que la variable de puntos esté inicializada numéricamente
         if (certificadoIniciado.registro_meritos_termodinamicos.puntos_redencion === undefined) {
             certificadoIniciado.registro_meritos_termodinamicos.puntos_redencion = 0;
         }
 
-        // 3. BLINDAJE CRÍTICO: Aseguramos que el array de historial exista antes del push
-        if (!certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios) {
-            certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios = [];
-        }
+        // Aseguramos que el array de historial exista de manera infalible
+        certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios = 
+            certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios || [];
 
-        // 4. Operación segura en la RAM
+        // Ahora la mutación en la RAM es 100% segura
         certificadoIniciado.registro_meritos_termodinamicos.puntos_redencion += puntosA_Sumar;
         certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios.push({
             tipo: "Acumulación por Intercambio",
