@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
@@ -52,9 +52,14 @@
                 margin-top: 15px;
                 text-transform: uppercase;
             }
-            button:hover {
+            button:hover:not(:disabled) {
                 background: #10b981;
                 color: #0d1117;
+            }
+            button:disabled {
+                border-color: #ff3333;
+                color: #ff3333;
+                cursor: not-allowed;
             }
             .consola {
                 background: #000;
@@ -67,7 +72,8 @@
                 white-space: pre-wrap;
             }
         </style>
-        <script src="../src/openpgp.min.js"></script>
+        
+        <script src="../src/openpgp.min.js" onerror="console.error('🚨 Falló la carga física de openpgp.min.js')"></script>
     </head>
     <body>
         <div class="panel">
@@ -96,12 +102,34 @@
 
             <button id="btnForjar" onclick="forjarNuevaCedulaSoberana()">⚡ Forjar y Descargar Certificado</button>
             <div class="consola" id="logForja" style="border-left-color: #00ffcc; color: #00ffcc">
-                🪵 Listo para inicializar entropía...
+                ⏳ Analizando inicialización de entropía...
             </div>
         </div>
 
         <script>
-            // --- LOGICA DE CARGA DIRECTA A STORAGE ---
+            // --- DIAGNÓSTICO EN FRÍO AL CARGAR LA INTERFAZ ---
+            document.addEventListener("DOMContentLoaded", () => {
+                const btn = document.getElementById("btnForjar");
+                const logForja = document.getElementById("logForja");
+                const logSesion = document.getElementById("logSesión");
+
+                if (typeof openpgp !== "undefined") {
+                    logForja.innerText = "🟢 Motor criptográfico OpenPGP detectado en RAM local desde '../src/'. listo para forjar.";
+                } else {
+                    // Alerta visual inmediata si el archivo no está en la ruta
+                    logForja.style.color = "#ff3333";
+                    logForja.style.borderLeftColor = "#ff3333";
+                    logForja.innerText = "❌ ERROR CRÍTICO: No se detectó openpgp.js en la memoria RAM.\nVerifica que el archivo físico esté realmente en la ruta: '../src/openpgp.min.js'.";
+                    
+                    logSesion.style.color = "#ff3333";
+                    logSesion.style.borderLeftColor = "#ff3333";
+                    logSesion.innerText = "❌ Entorno degradado: Firma desprendida inhabilitada por falta de librerías.";
+                    
+                    btn.disabled = true;
+                }
+            });
+
+            // --- LÓGICA DE CARGA DIRECTA A STORAGE ---
             document.getElementById("archivoCedula").addEventListener("change", (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -119,9 +147,11 @@
                         // Inyección estratégica en la RAM del navegador
                         sessionStorage.setItem("macondo_session_token", llavePrivada);
 
+                        document.getElementById("logSesión").style.color = "#39ff14";
+                        document.getElementById("logSesión").style.borderLeftColor = "#39ff14";
                         document.getElementById("logSesión").innerHTML =
                             `🟢 ¡SESIÓN MONTADA EN RAM SUCCESSFULLY!\n` +
-                            `Mercante: ${cedula.metadata?.alias_custodio || "Anonimo"}\n` +
+                            `Mercante: ${cedula.metadata?.alias_custodio || "Anónimo"}\n` +
                             `Rango:    ${cedula.metadata?.rango_actual || "Iniciado"}\n` +
                             `Clave PGP resguardada de forma segura en almacenamiento temporal de sesión.`;
                     } catch (err) {
@@ -131,21 +161,26 @@
                 lector.readAsText(file);
             });
 
-            // --- LOGICA DE GENERACIÓN DE LLAVES (ECC ASÍNCRONO) ---
+            // --- LÓGICA DE GENERACIÓN DE LLAVES MATEMÁTICAS REALES (ECC ASÍNCRONO v5) ---
             async function forjarNuevaCedulaSoberana() {
                 const alias = document.getElementById("forjaAlias").value.trim();
                 const pass = document.getElementById("forjaPass").value;
                 const log = document.getElementById("logForja");
+
+                if (typeof openpgp === "undefined") {
+                    alert("No se puede ejecutar la forja matemática: OpenPGP no está inicializado.");
+                    return;
+                }
 
                 if (!alias || !pass) {
                     log.innerText = "❌ Error: Especifica un alias y una contraseña.";
                     return;
                 }
 
-                log.innerText = "⏳ Computando par de llaves de curva elíptica (ECC Ed25519) en RAM...";
+                log.innerText = "⏳ Computando par de llaves legítimas de curva elíptica (ECC Ed25519) en RAM...";
 
                 try {
-                    // Generar las llaves de forma 100% local e invisible para terceros
+                    // Generación local y atómica de llaves válidas para evitar firmas corruptas
                     const keyPair = await openpgp.generateKey({
                         type: "ecc",
                         curve: "ed25519",
@@ -153,7 +188,7 @@
                         passphrase: pass
                     });
 
-                    // Construcción de la matriz estructurada de la Cédula Nodal
+                    // Estructura oficial del pasaporte soberano de la red Macondo
                     const nuevaCedula = {
                         metadata: {
                             alias_custodio: alias,
@@ -171,18 +206,16 @@
                         }
                     };
 
-                    // Empaquetar y descargar el JSON resultante de forma automática
-                    const dataStr =
-                        "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nuevaCedula, null, 2));
+                    // Descarga nativa automatizada sin intermediación de servidores públicos
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nuevaCedula, null, 2));
                     const downloadAnchor = document.createElement("a");
                     downloadAnchor.setAttribute("href", dataStr);
                     downloadAnchor.setAttribute("download", `cedula_mercante_${alias.toLowerCase()}.json`);
                     downloadAnchor.click();
 
-                    log.innerText =
-                        "🟢 ¡Cédula Nodal Forjada exitosamente!\nEl archivo se ha descargado. Súbelo en el panel de arriba para iniciar sesión.";
+                    log.innerText = "🟢 ¡Cédula Nodal Legítima Forjada exitosamente!\nEl archivo JSON real se ha descargado. Súbelo en el panel superior para activar la sesión.";
                 } catch (error) {
-                    log.innerText = `❌ Error en la forja: ${error.message}`;
+                    log.innerText = `❌ Error en la forja matemática: ${error.message}`;
                 }
             }
         </script>
