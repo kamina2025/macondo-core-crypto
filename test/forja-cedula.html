@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
         <title>Macondo Core - Panel de Perfil Nodal</title>
-        <link rel="stylesheet" href="../css/terminal.css">
+        <link rel="stylesheet" href="../css/terminal.css" />
     </head>
     <body>
         <div class="terminal">
@@ -14,18 +14,18 @@
 
             <!-- LECTOR DE PERFILES -->
             <div class="panel-lector">
-                <h3 style="color: #00ffcc;">👁️ Cargar Cédula Vigente</h3>
+                <h3 style="color: #00ffcc">👁️ Cargar Cédula Vigente</h3>
                 <input type="file" id="fileCargarCedula" accept=".json" />
                 <div id="statusLiveBox" class="status-live"></div>
             </div>
 
             <!-- CONTENEDOR DINÁMICO DUAL (PASARELA O PIZARRA) -->
-            <div id="contenedorDinamico" style="display:none; margin-bottom: 20px;"></div>
+            <div id="contenedorDinamico" style="display: none; margin-bottom: 20px"></div>
 
             <!-- ATRIBUTOS -->
             <div class="panel-soberano">
                 <h3>🛠️ Atributos del Nodo y Aportes</h3>
-                
+
                 <div class="form-group">
                     <label>Alias del Custodio:</label>
                     <input type="text" id="alias" placeholder="Ej: Juan_Miranda" />
@@ -34,7 +34,7 @@
                 <!-- SELECTOR DE RANGO INTEGRADO PARA SIMULACIÓN -->
                 <div class="form-group">
                     <label>Rango en la Comunidad (Asignación Manual):</label>
-                    <select id="rangoSimulado" style="border-color: #00ffcc; color: #00ffcc;">
+                    <select id="rangoSimulado" style="border-color: #00ffcc; color: #00ffcc">
                         <option value="Iniciado">Iniciado (Rango Base / Pasarela)</option>
                         <option value="Aprendiz">Aprendiz (Operador de Gremio)</option>
                         <option value="Oficial">Oficial (Supervisor de Bóvedas)</option>
@@ -55,13 +55,17 @@
                 <div class="form-group">
                     <label>Matriz de Gremio / Aporte Físico:</label>
                     <select id="aporteMaterial">
-                        <option value="Reciclaje de Plásticos (Precious Plastic)">Reciclaje de Plásticos (Precious Plastic)</option>
+                        <option value="Reciclaje de Plásticos (Precious Plastic)">
+                            Reciclaje de Plásticos (Precious Plastic)
+                        </option>
                         <option value="Biomasa y Compostaje Local">Biomasa y Compostaje Local</option>
                         <option value="Soporte de Red Mesh / Radioafición">Soporte de Red Mesh / Radioafición</option>
-                        <option value="Mantenimiento de Sistemas Solares/Hidroponía">Mantenimiento de Sistemas Solares/Hidroponía</option>
+                        <option value="Mantenimiento de Sistemas Solares/Hidroponía">
+                            Mantenimiento de Sistemas Solares/Hidroponía
+                        </option>
                     </select>
                 </div>
-                
+
                 <div class="form-group" id="passContainer">
                     <label>Frase de Acceso Local (Requerido solo para Nueva Forja):</label>
                     <input type="password" id="passphrase" placeholder="Mínimo 8 caracteres" />
@@ -76,74 +80,6 @@
         </div>
 
         <script src="../src/openpgp.min.js"></script>
-        <script type="module">
-            import { PerfilLogica } from "../src/perfil-logica.js?v=999";
-            import { GremioLogica } from "../src/gremio-logica.js?v=999";
-
-            const inputsMapeo = {
-                alias: document.getElementById("alias"),
-                hardware: document.getElementById("hardwareNodo"),
-                almacenamiento: document.getElementById("almacenamientoGB"),
-                aporte: document.getElementById("aporteMaterial"),
-                statusBox: document.getElementById("statusLiveBox")
-            };
-
-            const preview = document.getElementById("previewCedula");
-            const contenedorDinamico = document.getElementById("contenedorDinamico");
-
-            // Lector de Cédulas Existentes
-            document.getElementById("fileCargarCedula").addEventListener("change", (e) => {
-                const archivo = e.target.files[0];
-                if (!archivo) return;
-
-                const lector = new FileReader();
-                lector.onload = (evento) => {
-                    try {
-                        const jsonParsed = JSON.parse(evento.target.result);
-                        preview.value = JSON.stringify(jsonParsed, null, 2);
-                        
-                        // 1. Cargar el mapa visual base
-                        PerfilLogica.cargarPerfilVisual(jsonParsed, inputsMapeo);
-                        document.getElementById("passContainer").style.opacity = "0.4";
-
-                        // Sincronizar el selector de rango con lo que viene del JSON cargado
-                        if (jsonParsed.metadata?.rango_actual && document.getElementById("rangoSimulado")) {
-                            document.getElementById("rangoSimulado").value = jsonParsed.metadata.rango_actual;
-                        }
-
-                        // 2. DISPARADOR DUAL: Evaluar el rango del certificado running en RAM
-                        const rango = jsonParsed.metadata?.rango_actual || "Iniciado";
-                        const gremio = jsonParsed.registro_meritos_termodinamicos?.aporte_principal || "";
-
-                        if (rango === "Iniciado") {
-                            GremioLogica.mostrarPasarelaIniciado(contenedorDinamico);
-                        } else {
-                            GremioLogica.mostrarPizarraCustodio(contenedorDinamico, gremio);
-                        }
-
-                    } catch (err) {
-                        alert("El archivo seleccionado no es un perfil JSON válido.");
-                    }
-                };
-                lector.readAsText(archivo);
-            });
-
-            // Disparador de Forja Inicial
-            document.getElementById("btnEjecutarForja").addEventListener("click", async () => {
-                const alias = inputsMapeo.alias.value.trim();
-                const pass = document.getElementById("passphrase").value;
-                
-                const datosFisicos = {
-                    hardware: inputsMapeo.hardware.value.trim(),
-                    almacenamiento: parseInt(inputsMapeo.almacenamiento.value) || 10,
-                    aporte: inputsMapeo.aporte.value
-                };
-
-                // El archivo src/perfil-logica.js leerá el elemento "rangoSimulado" internamente
-                await PerfilLogica.ejecutarForjaBase(alias, pass, datosFisicos, preview, inputsMapeo.statusBox);
-                contenedorDinamico.style.display = "none";
-                document.getElementById("passContainer").style.opacity = "1";
-            });
-        </script>
+        <script type="module" src="../src/boton-interfaz/boton-forja-cedula.js"></script>
     </body>
 </html>
