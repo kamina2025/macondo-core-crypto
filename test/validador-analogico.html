@@ -4,6 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Macondo - Altar de Validación Analógica</title>
+        <link rel="stylesheet" href="../css/terminal.css" />
         <style>
             :root {
                 --bg-principal: #0d1117;
@@ -105,7 +106,6 @@
                 box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
             }
 
-            /* Monitor de Estado Termodinámico */
             .pantalla-auditoria {
                 margin-top: 25px;
                 padding: 15px;
@@ -151,13 +151,13 @@
             }
 
             .tabla-datos td {
-                padding: 4px 0;
+                padding: 6px 0;
                 font-size: 0.9rem;
             }
 
             .tabla-datos td:first-child {
                 color: var(--texto-apagado);
-                width: 40%;
+                width: 45%;
             }
 
             .badge-id {
@@ -166,32 +166,41 @@
                 border-radius: 3px;
                 font-size: 0.8rem;
                 color: var(--texto-puro);
+                font-family: monospace;
+            }
+            .btn-back {
+                display: inline-block;
+                color: var(--texto-apagado);
+                text-decoration: none;
+                font-size: 0.85rem;
+                margin-bottom: 15px;
+            }
+            .btn-back:hover {
+                color: var(--verde-macondo);
             }
         </style>
-
-        <script src="../src/openpgp.min.js"></script>
-        <script src="./macondo-qr-termico.js"></script>
     </head>
     <body>
         <div class="contenedor-altar">
+            <a href="punto-pago.html" class="btn-back">← Volver a la Estación Mercante</a>
             <h2>Validación de Sello QR Analógico</h2>
 
             <div class="grid-inputs">
                 <div class="seccion">
-                    <label for="pubKeyInput">Clave Pública PGP del Mercante Emisor</label>
+                    <label for="pubKeyInput">Clave Pública PGP del Mercante Emisor (Opcional para Patio)</label>
                     <textarea
                         id="pubKeyInput"
-                        rows="5"
-                        placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----&#10;... (Pegar la llave de la Cédula Nodal del Mercante) ..."></textarea>
+                        rows="4"
+                        placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----&#10;... (Se usa para descifrados de firmas legítimas asíncronas) ..."></textarea>
                 </div>
 
                 <div class="seccion">
-                    <label for="qrStringInput">Lectura Cruda del Sello QR (Cámara o Lector)</label>
-                    <textarea id="qrStringInput" rows="4" placeholder="PAYLOAD_BASE64|FIRMA_RAW_BASE64"></textarea>
+                    <label for="qrStringInput">Lectura Cruda del Sello QR o WhatsApp</label>
+                    <textarea id="qrStringInput" rows="4" placeholder="Pegue aquí la cadena impresa o el texto, ej: MACONDO_SELLO:ZXlKcFpDSTZ..."></textarea>
                 </div>
             </div>
 
-            <button id="btnVerificar" onclick="ejecutarAuditoriaFisica()">Ejecutar Auditoría Criptográfica</button>
+            <button id="btnVerificar">Ejecutar Auditoría Criptográfica</button>
 
             <div class="pantalla-auditoria" id="monitorTerminal">
                 <div class="estado-inicial">[Esperando inyección de datos de ticket térmico...]</div>
