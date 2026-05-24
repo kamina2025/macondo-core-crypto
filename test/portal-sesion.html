@@ -1,130 +1,190 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Macondo Core - Consola de Acceso y Forja de Sesión</title>
-    <style>
-        body { background: #0d1117; color: #c9d1d9; font-family: 'Courier New', monospace; padding: 30px; }
-        .panel { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 6px; max-width: 600px; margin: 0 auto 20px; }
-        h2 { color: #10b981; text-transform: uppercase; margin-top: 0; font-size: 1.2rem; }
-        label { display: block; margin: 10px 0 5px; color: #8b949e; font-size: 0.85rem; text-transform: uppercase;}
-        input, select { width: 100%; padding: 8px; background: #0d1117; border: 1px solid #30363d; color: #10b981; font-family: monospace; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: transparent; border: 1px solid #10b981; color: #10b981; font-weight: bold; cursor: pointer; margin-top: 15px; text-transform: uppercase;}
-        button:hover { background: #10b981; color: #0d1117; }
-        .consola { background: #000; border-left: 3px solid #39ff14; padding: 12px; color: #39ff14; font-size: 0.85rem; margin-top: 15px; min-height: 40px; white-space: pre-wrap; }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/openpgp/5.11.1/openpgp.min.js"></script>
-</head>
-<body>
-
-    <div class="panel">
-        <h2>🔑 Inicializar Sesión de Mercante en RAM</h2>
-        <p style="font-size: 0.8rem; color: #8b949e;">Sube tu archivo JSON de identidad para activar los derechos de firma asíncrona en este nodo.</p>
-        
-        <label>Seleccionar Cédula (.json):</label>
-        <input type="file" id="archivoCedula" accept=".json" />
-        
-        <div class="consola" id="logSesión">🪵 Esperando montaje de pasaporte en memoria...</div>
-    </div>
-
-    <div class="panel" style="border-color: #00ffcc;">
-        <h2 style="color: #00ffcc;">🛠️ Forjador de Cédulas Nodales PGP</h2>
-        <p style="font-size: 0.8rem; color: #8b949e;">Genera un par de llaves criptográficas ECC nativas en tu cliente y compila el JSON oficial.</p>
-        
-        <label>Alias del Mercante:</label>
-        <input type="text" id="forjaAlias" value="Mercante_Patio_Centro" />
-        
-        <label>Contraseña de Cifrado (Passphrase):</label>
-        <input type="password" id="forjaPass" value="macondo2026" />
-
-        <button id="btnForjar" onclick="forjarNuevaCedulaSoberana()">⚡ Forjar y Descargar Certificado</button>
-        <div class="consola" id="logForja" style="border-left-color: #00ffcc; color: #00ffcc;">🪵 Listo para inicializar entropía...</div>
-    </div>
-
-    <script>
-        // --- LOGICA DE CARGA DIRECTA A STORAGE ---
-        document.getElementById('archivoCedula').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const lector = new FileReader();
-            lector.onload = (evt) => {
-                try {
-                    const cedula = JSON.parse(evt.target.result);
-                    const llavePrivada = cedula.keys?.private_key;
-
-                    if (!llavePrivada) {
-                        throw new Error("El archivo JSON no contiene un bloque válido de llave privada PGP.");
-                    }
-
-                    // Inyección estratégica en la RAM del navegador
-                    sessionStorage.setItem("macondo_session_token", llavePrivada);
-                    
-                    document.getElementById('logSesión').innerHTML = 
-                        `🟢 ¡SESIÓN MONTADA EN RAM SUCCESSFULLY!\n` +
-                        `Mercante: ${cedula.metadata?.alias_custodio || "Anonimo"}\n` +
-                        `Rango:    ${cedula.metadata?.rango_actual || "Iniciado"}\n` +
-                        `Clave PGP resguardada de forma segura en almacenamiento temporal de sesión.`;
-                } catch (err) {
-                    document.getElementById('logSesión').innerText = `❌ Error: ${err.message}`;
-                }
-            };
-            lector.readAsText(file);
-        });
-
-        // --- LOGICA DE GENERACIÓN DE LLAVES (ECC ASÍNCRONO) ---
-        async function forjarNuevaCedulaSoberana() {
-            const alias = document.getElementById('forjaAlias').value.trim();
-            const pass = document.getElementById('forjaPass').value;
-            const log = document.getElementById('logForja');
-
-            if (!alias || !pass) {
-                log.innerText = "❌ Error: Especifica un alias y una contraseña.";
-                return;
+    <head>
+        <meta charset="UTF-8" />
+        <title>Macondo Core - Consola de Acceso y Forja de Sesión</title>
+        <style>
+            body {
+                background: #0d1117;
+                color: #c9d1d9;
+                font-family: "Courier New", monospace;
+                padding: 30px;
             }
+            .panel {
+                background: #161b22;
+                border: 1px solid #30363d;
+                padding: 20px;
+                border-radius: 6px;
+                max-width: 600px;
+                margin: 0 auto 20px;
+            }
+            h2 {
+                color: #10b981;
+                text-transform: uppercase;
+                margin-top: 0;
+                font-size: 1.2rem;
+            }
+            label {
+                display: block;
+                margin: 10px 0 5px;
+                color: #8b949e;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+            }
+            input,
+            select {
+                width: 100%;
+                padding: 8px;
+                background: #0d1117;
+                border: 1px solid #30363d;
+                color: #10b981;
+                font-family: monospace;
+                box-sizing: border-box;
+            }
+            button {
+                width: 100%;
+                padding: 10px;
+                background: transparent;
+                border: 1px solid #10b981;
+                color: #10b981;
+                font-weight: bold;
+                cursor: pointer;
+                margin-top: 15px;
+                text-transform: uppercase;
+            }
+            button:hover {
+                background: #10b981;
+                color: #0d1117;
+            }
+            .consola {
+                background: #000;
+                border-left: 3px solid #39ff14;
+                padding: 12px;
+                color: #39ff14;
+                font-size: 0.85rem;
+                margin-top: 15px;
+                min-height: 40px;
+                white-space: pre-wrap;
+            }
+        </style>
+        <script src="../src/openpgp.min.js"></script>
+    </head>
+    <body>
+        <div class="panel">
+            <h2>🔑 Inicializar Sesión de Mercante en RAM</h2>
+            <p style="font-size: 0.8rem; color: #8b949e">
+                Sube tu archivo JSON de identidad para activar los derechos de firma asíncrona en este nodo.
+            </p>
 
-            log.innerText = "⏳ Computando par de llaves de curva elíptica (ECC Ed25519) en RAM...";
+            <label>Seleccionar Cédula (.json):</label>
+            <input type="file" id="archivoCedula" accept=".json" />
 
-            try {
-                // Generar las llaves de forma 100% local e invisible para terceros
-                const keyPair = await openpgp.generateKey({
-                    type: 'ecc',
-                    curve: 'ed25519',
-                    userIDs: [{ name: alias, email: 'mercante@macondo.network' }],
-                    passphrase: pass
-                });
+            <div class="consola" id="logSesión">🪵 Esperando montaje de pasaporte en memoria...</div>
+        </div>
 
-                // Construcción de la matriz estructurada de la Cédula Nodal
-                const nuevaCedula = {
-                    metadata: {
-                        alias_custodio: alias,
-                        rango_actual: "Oficial_Mercante",
-                        generacion_actual: 1,
-                        fecha_forja: new Date().toISOString()
-                    },
-                    keys: {
-                        public_key: keyPair.publicKey,
-                        private_key: keyPair.privateKey
-                    },
-                    registro_meritos_termodinamicos: {
-                        ultimo_hash_consenso: "bc72e1a9d4b2e7e6f85093a1236bcda4",
-                        puntos_redencion: 1000
+        <div class="panel" style="border-color: #00ffcc">
+            <h2 style="color: #00ffcc">🛠️ Forjador de Cédulas Nodales PGP</h2>
+            <p style="font-size: 0.8rem; color: #8b949e">
+                Genera un par de llaves criptográficas ECC nativas en tu cliente y compila el JSON oficial.
+            </p>
+
+            <label>Alias del Mercante:</label>
+            <input type="text" id="forjaAlias" value="Mercante_Patio_Centro" />
+
+            <label>Contraseña de Cifrado (Passphrase):</label>
+            <input type="password" id="forjaPass" value="macondo2026" />
+
+            <button id="btnForjar" onclick="forjarNuevaCedulaSoberana()">⚡ Forjar y Descargar Certificado</button>
+            <div class="consola" id="logForja" style="border-left-color: #00ffcc; color: #00ffcc">
+                🪵 Listo para inicializar entropía...
+            </div>
+        </div>
+
+        <script>
+            // --- LOGICA DE CARGA DIRECTA A STORAGE ---
+            document.getElementById("archivoCedula").addEventListener("change", (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const lector = new FileReader();
+                lector.onload = (evt) => {
+                    try {
+                        const cedula = JSON.parse(evt.target.result);
+                        const llavePrivada = cedula.keys?.private_key;
+
+                        if (!llavePrivada) {
+                            throw new Error("El archivo JSON no contiene un bloque válido de llave privada PGP.");
+                        }
+
+                        // Inyección estratégica en la RAM del navegador
+                        sessionStorage.setItem("macondo_session_token", llavePrivada);
+
+                        document.getElementById("logSesión").innerHTML =
+                            `🟢 ¡SESIÓN MONTADA EN RAM SUCCESSFULLY!\n` +
+                            `Mercante: ${cedula.metadata?.alias_custodio || "Anonimo"}\n` +
+                            `Rango:    ${cedula.metadata?.rango_actual || "Iniciado"}\n` +
+                            `Clave PGP resguardada de forma segura en almacenamiento temporal de sesión.`;
+                    } catch (err) {
+                        document.getElementById("logSesión").innerText = `❌ Error: ${err.message}`;
                     }
                 };
+                lector.readAsText(file);
+            });
 
-                // Empaquetar y descargar el JSON resultante de forma automática
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nuevaCedula, null, 2));
-                const downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", dataStr);
-                downloadAnchor.setAttribute("download", `cedula_mercante_${alias.toLowerCase()}.json`);
-                downloadAnchor.click();
+            // --- LOGICA DE GENERACIÓN DE LLAVES (ECC ASÍNCRONO) ---
+            async function forjarNuevaCedulaSoberana() {
+                const alias = document.getElementById("forjaAlias").value.trim();
+                const pass = document.getElementById("forjaPass").value;
+                const log = document.getElementById("logForja");
 
-                log.innerText = "🟢 ¡Cédula Nodal Forjada exitosamente!\nEl archivo se ha descargado. Súbelo en el panel de arriba para iniciar sesión.";
+                if (!alias || !pass) {
+                    log.innerText = "❌ Error: Especifica un alias y una contraseña.";
+                    return;
+                }
 
-            } catch (error) {
-                log.innerText = `❌ Error en la forja: ${error.message}`;
+                log.innerText = "⏳ Computando par de llaves de curva elíptica (ECC Ed25519) en RAM...";
+
+                try {
+                    // Generar las llaves de forma 100% local e invisible para terceros
+                    const keyPair = await openpgp.generateKey({
+                        type: "ecc",
+                        curve: "ed25519",
+                        userIDs: [{ name: alias, email: "mercante@macondo.network" }],
+                        passphrase: pass
+                    });
+
+                    // Construcción de la matriz estructurada de la Cédula Nodal
+                    const nuevaCedula = {
+                        metadata: {
+                            alias_custodio: alias,
+                            rango_actual: "Oficial_Mercante",
+                            generacion_actual: 1,
+                            fecha_forja: new Date().toISOString()
+                        },
+                        keys: {
+                            public_key: keyPair.publicKey,
+                            private_key: keyPair.privateKey
+                        },
+                        registro_meritos_termodinamicos: {
+                            ultimo_hash_consenso: "bc72e1a9d4b2e7e6f85093a1236bcda4",
+                            puntos_redencion: 1000
+                        }
+                    };
+
+                    // Empaquetar y descargar el JSON resultante de forma automática
+                    const dataStr =
+                        "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nuevaCedula, null, 2));
+                    const downloadAnchor = document.createElement("a");
+                    downloadAnchor.setAttribute("href", dataStr);
+                    downloadAnchor.setAttribute("download", `cedula_mercante_${alias.toLowerCase()}.json`);
+                    downloadAnchor.click();
+
+                    log.innerText =
+                        "🟢 ¡Cédula Nodal Forjada exitosamente!\nEl archivo se ha descargado. Súbelo en el panel de arriba para iniciar sesión.";
+                } catch (error) {
+                    log.innerText = `❌ Error en la forja: ${error.message}`;
+                }
             }
-        }
-    </script>
-</body>
+        </script>
+    </body>
 </html>
