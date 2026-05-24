@@ -213,3 +213,31 @@ export const MercanteLogica = {
         };
     }
 };
+function enviarPorWhatsApp(telefonoCustodio, textoTicket) {
+    // encodeURIComponent codifica los saltos de línea y espacios de forma nativa
+    const mensajeCodificado = encodeURIComponent(textoTicket);
+    const url = `https://api.whatsapp.com/send?phone=${telefonoCustodio}&text=${mensajeCodificado}`;
+    
+    // Abre una ventana o redirige al chat con el ticket pre-cargado listo para enviar
+    window.open(url, '_blank');
+}
+function imprimirTicketFisico(textoTicket) {
+    const ventanaImpresion = window.open('', '_blank', 'width=300,height=400');
+    ventanaImpresion.document.write(`
+        <html>
+        <head>
+            <style>
+                body { font-family: 'Courier New', Courier, monospace; font-size: 12px; margin: 0; padding: 10px; }
+                pre { margin: 0; white-space: pre-wrap; }
+            </style>
+        </head>
+        <body>
+            <pre>${textoTicket}</pre>
+            <script>
+                window.onload = function() { window.print(); window.close(); }
+            </script>
+        </body>
+        </html>
+    `);
+    ventanaImpresion.document.close();
+}

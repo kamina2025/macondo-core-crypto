@@ -18,6 +18,10 @@ const monitor = (texto, err = false) => {
 /**
  * Función constructora del diseño ASCII adaptada para terminales térmicas (58mm) y WhatsApp
  */
+/**
+ * Función constructora del diseño ASCII adaptada para terminales térmicas (58mm) y WhatsApp
+ * CORREGIDA: Error de typo en variable de línea divisoria solucionado.
+ */
 function construirTextoTicketEstandar(datos, pin, artefacto) {
     const anchoTicket = 32;
     const lineaDivisoria = "=".repeat(anchoTicket);
@@ -46,7 +50,7 @@ function construirTextoTicketEstandar(datos, pin, artefacto) {
     ticket += `Puntos Activos: ${datos.puntos_redencion} pts\n`;
     ticket += `Hash de Consenso:\n`;
     ticket += `${datos.ultimo_hash_consenso.substring(0, 20)}...\n`;
-    ticket += `${lineisDivisoria || '='.repeat(32)}\n`;
+    ticket += `${lineaDivisoria}\n`; // <-- CORREGIDO: Aquí estaba el error de escritura
     ticket += "   EL CODIGO ES LA LEY EN EL PATIO  \n";
     ticket += `${lineaDivisoria}\n`;
     return ticket;
