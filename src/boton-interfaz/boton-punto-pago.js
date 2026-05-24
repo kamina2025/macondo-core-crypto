@@ -2,8 +2,7 @@
  * PROYECTO MACONDO - CONTROLADOR DE INTERFAZ PARA PUNTO DE PAGO
  * Ubicación sugerida: /tu-raiz/boton-interfaz/boton-punto-pago.js
  */
-import { MercanteLogica } from "../src/mercante-logica.js?v=999";
-
+import { MercanteLogica } from "../mercante-logica.js?v=999";
 // Variables de estado en la RAM de la vista
 let certificadoCliente = null;
 let ticketActualTexto = "";
