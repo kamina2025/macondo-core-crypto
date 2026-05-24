@@ -41,10 +41,16 @@ const MacondoQRTermico = {
      */
     obtenerPayloadVerificacion(datos, pin, artefacto) {
         const hashReducido = datos.ultimo_hash_consenso.substring(0, 10);
+        const rangoNodal = datos.metadata?.rango || "Iniciado";
         // Formato ultra-compacto ideal para cadenas Mesh, radios LoRa o códigos QR rápidos
-        return `MACONDO:${datos.nombre}:${rango}:${pin}:${hashReducido}`;
+        return `MACONDO:${datos.nombre}:${rangoNodal}:${pin}:${hashReducido}`;
     }
 };
+
+// 🔓 ROMPER EL AISLAMIENTO DEL MÓDULO:
+// Al inyectarlo en window, cualquier script externo o evento del HTML podrá invocarlo.
+window.MacondoQRTermico = MacondoQRTermico;
+
 const monitor = (texto, err = false) => {
     const c = document.getElementById("consolaMercante");
     if (!c) return;
@@ -83,9 +89,10 @@ function construirTextoTicketEstandar(datos, pin, artefacto) {
     ticket += `Puntos Activos: ${datos.puntos_redencion} pts\n`;
     ticket += `Hash de Consenso:\n`;
     ticket += `${datos.ultimo_hash_consenso.substring(0, 20)}...\n`;
+    
     // 🔏 INYECCIÓN CRIPTOGRÁFICA DE MACONDO QR TÉRMICO
-    // Añadimos el bloque de firma PGP al cuerpo físico del recibo
-    ticket += MacondoQRTermico.generarBloqueFirmaPGP(datos, pin, artefacto);
+    // Invoca el bloque PGP sin restricciones de módulo apuntando a la RAM global de window
+    ticket += window.MacondoQRTermico.generarBloqueFirmaPGP(datos, pin, artefacto);
     ticket += `${lineaDivisoria}\n`; 
     ticket += "   EL CODIGO ES LA LEY EN EL PATIO  \n";
     ticket += `${lineaDivisoria}\n`;
@@ -185,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById("datosIniciado").style.display = "block";
                 document.getElementById("operacionesPuntos").style.display = "block";
                 
-                monitor(`Certificado Nodal del Iniciado [${certificadoCliente.metadata?.alias_custodio}] cargado e indexado en la RAM.`);
+                monitor(`Certificado Nodal del Iniciado [${certificadoCliente.metadata?.alias_custodio}] cargado e indexado in mutablemente en la RAM.`);
             } catch(err) {
                 monitor("No se pudo parsear el certificado. Asegúrate de que sea un JSON válido de Macondo.", true);
             }
@@ -271,8 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             monitor("🔒 Computando firma asíncrona desprendida PGP en RAM...");
             
-            // Forjar el string contenedor (Payload Base64 + Firma PGP compactada)
-            const stringQR = await MacondoQRTermico.forjarSelloQR(transaccionActiva, llavePrivadaArmored, fraseAcceso);
+            // Forjar el string contenedor invocando al motor expuesto de manera global
+            const stringQR = await window.MacondoQRTermico.forjarSelloQR(transaccionActiva, llavePrivadaArmored, fraseAcceso);
 
             // Desplegar ventana optimizada para papel térmico inyectando qrcode.js en caliente
             const ventanaImpresion = window.open('', '_blank', 'width=320,height=600');
@@ -341,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             monitor("🔒 Firmando payload para el canal omnicanal móvil...");
-            const stringQR = await MacondoQRTermico.forjarSelloQR(transaccionActiva, llavePrivadaArmored, fraseAcceso);
+            const stringQR = await window.MacondoQRTermico.forjarSelloQR(transaccionActiva, llavePrivadaArmored, fraseAcceso);
 
             // Combinamos el texto ASCII limpio con el string criptográfico unificado
             const mensajeCompleto = 

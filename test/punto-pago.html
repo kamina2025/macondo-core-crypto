@@ -9,10 +9,11 @@
                 display: flex;
                 gap: 20px;
                 margin-top: 15px;
+                flex-wrap: wrap;
             }
             .col-mercante {
                 flex: 1;
-                min-width: 300px;
+                min-width: 320px;
             }
             .pin-display {
                 background: #111;
@@ -24,6 +25,7 @@
                 font-family: monospace;
                 margin-top: 10px;
                 letter-spacing: 3px;
+                box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
             }
             .badge-puntos {
                 background: #00ffcc;
@@ -33,6 +35,15 @@
                 border-radius: 3px;
                 font-family: monospace;
             }
+            .form-group {
+                margin-bottom: 12px;
+            }
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-size: 0.9rem;
+                color: #aaa;
+            }
         </style>
     </head>
     <body>
@@ -41,22 +52,24 @@
             <h1>[ MESA DE INTERCAMBIO MERCANTE Y FIDELIZACIÓN ]</h1>
             <p>Terminal de Patio: Emisión de PINs de acceso y pasarela de descuentos termodinámicos autónomos.</p>
             <hr />
-            <a href="validador-analogico.html" class="btn-nav" style="border-color: #ff00ff; color: #ff00ff"
-                >Validador Analogico De Pin de Acceso</a
-            >
+            
+            <a href="validador-analogico.html" class="btn-nav" style="border-color: #ff00ff; color: #ff00ff; display: inline-block; margin-bottom: 15px;">
+                🔍 VALIDADOR ANALÓGICO DE PIN DE ACCESO
+            </a>
+            
             <div class="split-comercio">
                 <div class="col-mercante panel-soberano">
                     <h3>🎫 Expendedora de PINs de Acceso</h3>
-                    <p style="font-size: 0.85rem; color: #aaa">
-                        Costo Estándar: 5,000 COP. Selecciona el destino para forjar el token:
+                    <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 15px;">
+                        Costo Estándar: 5,000 COP. Selecciona el destino para forjar el token criptográfico local:
                     </p>
 
                     <div class="form-group">
-                        <label>Artefacto Destino:</label>
+                        <label for="selectArtefacto">Artefacto Destino:</label>
                         <select
                             id="selectArtefacto"
                             class="caja-llave"
-                            style="color: #00ffcc; background: #000; padding: 5px; width: 100%">
+                            style="color: #00ffcc; background: #000; padding: 8px; width: 100%; border: 1px solid #333;">
                             <option value="Sinfonia">Sinfonía (Música)</option>
                             <option value="Videoteca">Videoteca (Cine/Animación)</option>
                             <option value="Tinta">Tinta (Manga/Cómic)</option>
@@ -64,40 +77,40 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Alias Mercante Emisor:</label>
-                        <input type="text" id="aliasMercante" class="caja-llave" value="Mercante_Patio_Centro" />
+                        <label for="aliasMercante">Alias Mercante Emisor:</label>
+                        <input type="text" id="aliasMercante" class="caja-llave" value="Mercante_Patio_Centro" style="width: 100%; box-sizing: border-box;" />
                     </div>
 
-                    <button id="btnGenerarPin" style="width: 100%; margin-top: 10px">
+                    <button id="btnGenerarPin" style="width: 100%; margin-top: 10px; cursor: pointer;">
                         ⚡ EMITIR PIN DE ACCESO (5,000 COP)
                     </button>
+                    
                     <div id="pinResultado" class="pin-display" style="display: none">---</div>
 
                     <div
                         id="contenedor-emision-ticket"
                         class="modulo-mercante"
                         style="margin-top: 20px; padding: 15px; border: 1px solid #333; background: #111">
-                        <h3 style="color: #00ff00; font-family: &quot;Courier New&quot;, monospace; margin-top: 0">
+                        <h3 style="color: #00ff00; font-family: 'Courier New', monospace; margin-top: 0">
                             🖨️ Despacho de Comprobante Nodal
                         </h3>
 
                         <div style="background: #000; padding: 10px; border: 1px dashed #444; margin-bottom: 15px">
                             <label style="color: #888; font-size: 11px; display: block; margin-bottom: 5px"
-                                >VISTA PREVIA DE MATRIZ DE IMPRESIÓN:</label
+                                >VISTA PREVIA DE MATRIZ DE IMPRESIÓN (58mm):</label
                             >
                             <pre
                                 id="vista-previa-ticket"
                                 style="
-                                    font-family: &quot;Courier New&quot;, monospace;
+                                    font-family: 'Courier New', monospace;
                                     font-size: 12px;
                                     color: #fff;
                                     margin: 0;
                                     white-space: pre-wrap;
                                     background: #050505;
                                     padding: 10px;
-                                ">
-[Genere un PIN para previsualizar el ticket térmico]</pre
-                            >
+                                    border: 1px solid #222;
+                                ">[Genere un PIN para previsualizar el ticket térmico]</pre>
                         </div>
 
                         <div class="acciones-ticket" style="display: flex; flex-direction: column; gap: 10px">
@@ -115,9 +128,10 @@
                                         background: #222;
                                         color: #fff;
                                         border: 1px solid #444;
-                                        padding: 6px;
+                                        padding: 8px;
                                         font-family: monospace;
                                         flex-grow: 1;
+                                        box-sizing: border-box;
                                     " />
                             </div>
 
@@ -130,12 +144,12 @@
                                         color: #00ff00;
                                         border: 1px solid #00ff00;
                                         padding: 10px;
-                                        font-family: &quot;Courier New&quot;, monospace;
+                                        font-family: 'Courier New', monospace;
                                         cursor: pointer;
                                         flex: 1;
                                         font-weight: bold;
                                     ">
-                                    🖨️ Imprimir Recibo Fisico
+                                    🖨️ Imprimir Recibo Físico
                                 </button>
 
                                 <button
@@ -146,7 +160,7 @@
                                         color: #fff;
                                         border: none;
                                         padding: 10px;
-                                        font-family: &quot;Courier New&quot;, monospace;
+                                        font-family: 'Courier New', monospace;
                                         cursor: pointer;
                                         flex: 1;
                                         font-weight: bold;
@@ -160,73 +174,74 @@
 
                 <div class="col-mercante panel-carga" style="border-color: #00ffcc">
                     <h3 style="color: #00ffcc">💳 Procesador de Certificados de Iniciados</h3>
-                    <p style="font-size: 0.85rem; color: #aaa">
-                        Carga la Cédula Nodal del cliente para gestionar sus puntos de lealtad:
+                    <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 15px;">
+                        Carga la Cédula Nodal del cliente para gestionar sus méritos e interactuar con la RAM:
                     </p>
 
-                    <input type="file" id="cargarCertificadoIniciado" accept=".json" style="margin-bottom: 15px" />
+                    <input type="file" id="cargarCertificadoIniciado" accept=".json" style="margin-bottom: 15px; width: 100%; color: #00ffcc;" />
 
                     <div
                         id="datosIniciado"
                         style="
                             display: none;
                             background: rgba(0, 0, 0, 0.4);
-                            padding: 10px;
+                            padding: 12px;
                             border: 1px solid #222;
                             margin-bottom: 15px;
                             font-size: 0.85rem;
+                            border-radius: 4px;
                         ">
-                        <p>
+                        <p style="margin: 4px 0;">
                             <strong>Custodio/Iniciado:</strong>
-                            <span id="lblAliasIniciado" style="color: #39ff14">-</span>
+                            <span id="lblAliasIniciado" style="color: #39ff14; font-weight: bold;">-</span>
                         </p>
-                        <p><strong>Rango de Red:</strong> <span id="lblRangoIniciado">-</span></p>
-                        <p>
+                        <p style="margin: 4px 0;"><strong>Rango de Red:</strong> <span id="lblRangoIniciado">-</span></p>
+                        <p style="margin: 4px 0;">
                             <strong>Puntos Disponibles:</strong>
                             <span id="lblPuntosIniciado" class="badge-puntos">0 pts</span>
                         </p>
                     </div>
 
                     <div id="operacionesPuntos" style="display: none">
-                        <hr style="border-color: #222" />
+                        <hr style="border-color: #222; margin: 15px 0;" />
 
-                        <div style="margin-bottom: 15px">
-                            <h4 style="color: #39ff14; margin: 5px 0">➕ Registrar Intercambio Físico (Acumular)</h4>
+                        <div style="margin-bottom: 20px">
+                            <h4 style="color: #39ff14; margin: 5px 0 10px 0;">➕ Registrar Intercambio Físico (Acumular)</h4>
                             <div style="display: flex; gap: 10px">
                                 <input
                                     type="number"
                                     id="montoIntercambio"
                                     class="caja-llave"
                                     placeholder="Monto en COP (Ej: 20000)"
-                                    style="flex: 1" />
-                                <button id="btnAcumularPuntos" style="padding: 5px 10px; font-size: 0.8rem">
+                                    style="flex: 1; padding: 6px;" />
+                                <button id="btnAcumularPuntos" style="padding: 5px 12px; font-size: 0.8rem; cursor: pointer;">
                                     Acumular Puntos
                                 </button>
                             </div>
                         </div>
 
                         <div>
-                            <h4 style="color: #ff3333; margin: 5px 0">➖ Aplicar Matriz de Descuento (Redimir)</h4>
+                            <h4 style="color: #ff3333; margin: 5px 0 10px 0;">➖ Aplicar Matriz de Descuento (Redimir)</h4>
                             <div class="form-group">
-                                <label>Naturaleza del Producto:</label>
+                                <label for="tipoProductoDescuento">Naturaleza del Producto:</label>
                                 <select
                                     id="tipoProductoDescuento"
                                     class="caja-llave"
-                                    style="background: #000; color: #ff3333">
+                                    style="background: #000; color: #ff3333; padding: 6px; width: 100%; border: 1px solid #333;">
                                     <option value="hidroponico">🛒 Hidroponía Comunal (2% Desc)</option>
                                     <option value="digital">💾 Infraestructura Digital (5% Desc)</option>
                                 </select>
                             </div>
-                            <div style="display: flex; gap: 10px; margin-top: 5px">
+                            <div style="display: flex; gap: 10px; margin-top: 10px">
                                 <input
                                     type="number"
                                     id="montoOriginalProducto"
                                     class="caja-llave"
                                     placeholder="Precio Base COP"
-                                    style="flex: 1" />
+                                    style="flex: 1; padding: 6px;" />
                                 <button
                                     id="btnCalcularRedimir"
-                                    style="border-color: #ff3333; color: #ff3333; padding: 5px 10px; font-size: 0.8rem">
+                                    style="border-color: #ff3333; color: #ff3333; padding: 5px 12px; font-size: 0.8rem; cursor: pointer; background: transparent;">
                                     Aplicar Descuento
                                 </button>
                             </div>
@@ -235,7 +250,7 @@
                 </div>
             </div>
 
-            <div id="consolaMercante" class="status-box" style="border-color: #39ff14; margin-top: 20px">
+            <div id="consolaMercante" class="status-box" style="border-color: #39ff14; margin-top: 25px">
                 🪵 Sistema Mercante listo. Esperando operaciones en el patio comercial...
             </div>
         </div>
