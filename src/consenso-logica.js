@@ -41,7 +41,7 @@ export const ConsensoLogica = {
     },
 
     /**
-     * CIFRADO SIMÉTRICO: Usa el string de la semilla numérica de forma idéntica.
+     * CIFRADO SIMÉTRICO PROTEGIDO: Cifra el payload y asegura compatibilidad Base64 total.
      */
     cifrarContenedor(textoPlano, claveString) {
         let resultado = "";
@@ -49,7 +49,8 @@ export const ConsensoLogica = {
             let charCode = textoPlano.charCodeAt(i) ^ claveString.charCodeAt(i % claveString.length);
             resultado += String.fromCharCode(charCode);
         }
-        return btoa(resultado);
+        // Usamos encodeURIComponent para blindar caracteres binarios extraños del XOR antes de codificar en Base64
+        return btoa(encodeURIComponent(resultado));
     },
 
     /**

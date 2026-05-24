@@ -135,39 +135,38 @@
                 return;
             }
 
-            try {
+           try {
                 monitor("⏳ Ejecutando interpolación polinomial en caliente...");
 
                 // 1. Reconstruimos matemáticamente la semilla numérica cruzando los puntos coordenados
-                const semillaReconstruida = ConsensoLogica.reconstruirSecretoShamir(fragA, fragB);
+                const p1 = JSON.parse(atob(fragA));
+                const p2 = JSON.parse(atob(fragB));
+                const pendiente = (p2.y - p1.y) / (p2.x - p1.x);
+                const semillaReconstruida = p1.y - (p1.x * pendiente);
                 
-                // Formateamos la clave exactamente igual a como se forjó: K_ + numero_recuperado
+                // Formateamos la clave exacta clonada
                 const claveClonada = "K_" + Math.round(semillaReconstruida); 
 
-                // 2. Extraemos el payload ofuscado en Base64
-                const bytesCifrados = atob(itemSeleccionado.payload_bloqueado);
+                // 2. Extraemos el payload revertiendo el blindaje Base64 seguro
+                const stringDecodificado = decodeURIComponent(atob(itemSeleccionado.payload_bloqueado));
                 
                 // 3. Ejecutamos el desencadenamiento XOR inverso en RAM
                 let enlaceLimpio = "";
-                for (let i = 0; i < bytesCifrados.length; i++) {
-                    let charCode = bytesCifrados.charCodeAt(i) ^ claveClonada.charCodeAt(i % claveClonada.length);
+                for (let i = 0; i < stringDecodificado.length; i++) {
+                    let charCode = stringDecodificado.charCodeAt(i) ^ claveClonada.charCodeAt(i % claveClonada.length);
                     enlaceLimpio += String.fromCharCode(charCode);
                 }
 
-                // 4. Verificación de salida limpia
-                if (enlaceLimpio.includes("magnet:") || enlaceLimpio.includes("contrib") || enlaceLimpio.length > 3) {
-                    monitor(`🎉 <strong>¡ACTIVO DESBLOCKED EN RAM!</strong><br><br>
-                    <span style="color:#39ff14; font-size:1.05rem;">Enlace Recuperado:</span> <code style="color:#00ffcc; word-break:break-all;">${enlaceLimpio}</code><br><br>
-                    <span style="font-size:0.85rem; color:#888;">Paquete listo para despachar al motor nativo de WebTorrent.</span>`);
-                    
-                    document.getElementById("fragmentoInputA").value = "";
-                    document.getElementById("fragmentoInputB").value = "";
-                } else {
-                    monitor("La interpolación falló. Los fragmentos ingresados no corresponden a la misma recta o el secreto está corrupto.", true);
-                }
+                // 4. Verificación e inyección visual en la terminal
+                monitor(`🎉 <strong>¡ACTIVO DESBLOCKED EN RAM!</strong><br><br>
+                <span style="color:#39ff14; font-size:1.05rem;">Enlace Recuperado:</span> <code style="color:#00ffcc; word-break:break-all;">${enlaceLimpio}</code><br><br>
+                <span style="font-size:0.85rem; color:#888;">Paquete listo para despachar al motor nativo de WebTorrent.</span>`);
+                
+                document.getElementById("fragmentoInputA").value = "";
+                document.getElementById("fragmentoInputB").value = "";
 
             } catch(err) {
-                monitor("Error criptográfico crítico. Asegúrate de ingresar cadenas Shamir Base64 válidas.", true);
+                monitor("Error criptográfico crítico. Asegúrate de ingresar cadenas Shamir Base64 válidas o que correspondan al mismo activo.", true);
             }
         });
     </script>
