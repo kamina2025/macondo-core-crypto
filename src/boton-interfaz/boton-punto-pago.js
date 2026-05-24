@@ -9,6 +9,42 @@ let certificadoCliente = null;
 let ticketActualTexto = "";
 let transaccionActiva = null; // Almacena el payload estructurado para la firma PGP
 
+// ===================================================================
+// MOTOR DE FIRMA CRIPTOGRÁFICA Y PARSEO ANALÓGICO: MACONDO QR TÉRMICO
+// ===================================================================
+const MacondoQRTermico = {
+    /**
+     * Forja un bloque de firma desprendida (Detached Signature) simulando OpenPGP ASCII Armor
+     * a partir del PIN, el custodio y el último hash de consenso de la Mesa Mercante.
+     */
+    generarBloqueFirmaPGP(datos, pin, artefacto) {
+        // Creamos el payload de verificación covalente
+        const payload = `${datos.nombre}|${pin}|${artefacto.toUpperCase()}|${datos.ultimo_hash_consenso}`;
+        
+        // Simulamos el empaquetado criptográfico en Base64
+        const firmaBase64 = btoa(payload).substring(0, 50);
+        
+        // Estructuramos el bloque bajo el estándar cypherpunk estricto
+        let bloquePGP = "\n-----BEGIN PGP SIGNATURE-----\n";
+        bloquePGP += "Version: Macondo Core v2.0 (Patio Local)\n";
+        bloquePGP += "Comment: Firmado de forma autonoma por Mesa Mercante\n\n";
+        bloquePGP += `${firmaBase64.substring(0, 25)}\n`;
+        bloquePGP += `${firmaBase64.substring(25, 50)}\n`;
+        bloquePGP += "-----END PGP SIGNATURE-----";
+        
+        return bloquePGP;
+    },
+
+    /**
+     * Genera un enlace de verificación local o QR legible para que otro nodo
+     * desconectado pueda escanear y validar la firma sin tocar internet.
+     */
+    obtenerPayloadVerificacion(datos, pin, artefacto) {
+        const hashReducido = datos.ultimo_hash_consenso.substring(0, 10);
+        // Formato ultra-compacto ideal para cadenas Mesh, radios LoRa o códigos QR rápidos
+        return `MACONDO:${datos.nombre}:${rango}:${pin}:${hashReducido}`;
+    }
+};
 const monitor = (texto, err = false) => {
     const c = document.getElementById("consolaMercante");
     if (!c) return;
@@ -47,6 +83,9 @@ function construirTextoTicketEstandar(datos, pin, artefacto) {
     ticket += `Puntos Activos: ${datos.puntos_redencion} pts\n`;
     ticket += `Hash de Consenso:\n`;
     ticket += `${datos.ultimo_hash_consenso.substring(0, 20)}...\n`;
+    // 🔏 INYECCIÓN CRIPTOGRÁFICA DE MACONDO QR TÉRMICO
+    // Añadimos el bloque de firma PGP al cuerpo físico del recibo
+    ticket += MacondoQRTermico.generarBloqueFirmaPGP(datos, pin, artefacto);
     ticket += `${lineaDivisoria}\n`; 
     ticket += "   EL CODIGO ES LA LEY EN EL PATIO  \n";
     ticket += `${lineaDivisoria}\n`;
