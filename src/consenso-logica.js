@@ -5,7 +5,6 @@
 import { MacondoCrypto } from "./macondo-crypto.js?v=999";
 
 export const ConsensoLogica = {
-
     obtenerDirectorioVirtual(nombreCarpeta) {
         const datos = localStorage.getItem(`boveda_${nombreCarpeta}`);
         return datos ? JSON.parse(datos) : [];
@@ -21,7 +20,7 @@ export const ConsensoLogica = {
     fragmentarSecretoShamir(secretoTexto) {
         // Convertimos el string a Hexadecimal para operar de forma matemática limpia
         const hexSecreto = btoa(secretoTexto);
-        
+
         // Creamos coeficientes aleatorios para el polinomio de grado 1: f(x) = Secreto + Coef_A * x
         const coefA = Math.floor(Math.random() * 1000) + 1;
 
@@ -62,13 +61,13 @@ export const ConsensoLogica = {
             gremio: "Sinfonía Discoteca",
             aprendiz: aliasAprendiz,
             tipo_aporte: tipoAporte,
-            
+
             // EL RECURSO SE CIFRA DE INMEDIATO: Nadie puede leer el Magnet Link real en tránsito
             payload_cifrado: this.cifrarContenedor(descripcionDetallada, claveContenedorUnica),
-            
+
             timestamp_creacion: new Date().toISOString(),
             estado_cadena: "Emitido por Aprendiz",
-            
+
             // MAPA DE FRAGMENTOS DISTRIBUIDOS: Cada uno resguarda una pieza de la soberanía
             boveda_fragmentos: {
                 fragmento_aprendiz: fragmento1, // Pedro se queda su pedazo
@@ -79,7 +78,11 @@ export const ConsensoLogica = {
         };
 
         const textoParaFirma = JSON.stringify(manifiesto, null, 2);
-        manifiesto.firmas_cadena.firma_aprendiz = await MacondoCrypto.firmarAccion(textoParaFirma, privateKey, passphrase);
+        manifiesto.firmas_cadena.firma_aprendiz = await MacondoCrypto.firmarAccion(
+            textoParaFirma,
+            privateKey,
+            passphrase
+        );
 
         let carpetaAportes = this.obtenerDirectorioVirtual("aportes-aprendiz");
         carpetaAportes.push(manifiesto);
@@ -93,11 +96,11 @@ export const ConsensoLogica = {
      */
     async oficialAprobarPorLote(idAporte, aliasOficial, privateKey, passphrase) {
         let carpetaAportes = this.obtenerDirectorioVirtual("aportes-aprendiz");
-        let idx = carpetaAportes.findIndex(c => c.id_aporte === idAporte);
+        let idx = carpetaAportes.findIndex((c) => c.id_aporte === idAporte);
         if (idx === -1) throw new Error("Aporte no encontrado.");
 
         let certificado = carpetaAportes[idx];
-        
+
         const auditoriaOficial = {
             id_aporte: certificado.id_aporte,
             oficial_auditor: aliasOficial,
@@ -123,7 +126,7 @@ export const ConsensoLogica = {
      */
     async maestroFirmarPorLote(idAporte, aliasMaestro, privateKey, passphrase) {
         let carpetaVerificados = this.obtenerDirectorioVirtual("verificados-oficiales");
-        let idx = carpetaVerificados.findIndex(c => c.id_aporte === idAporte);
+        let idx = carpetaVerificados.findIndex((c) => c.id_aporte === idAporte);
         if (idx === -1) throw new Error("Certificado no encontrado.");
 
         let certificado = carpetaVerificados[idx];
@@ -137,8 +140,8 @@ export const ConsensoLogica = {
         const firma = await MacondoCrypto.firmarAccion(textoFirma, privateKey, passphrase);
 
         if (!certificado.firmas_cadena.firmas_maestros) certificado.firmas_cadena.firmas_maestros = [];
-        
-        if (certificado.firmas_cadena.firmas_maestros.some(m => m.maestro === aliasMaestro)) {
+
+        if (certificado.firmas_cadena.firmas_maestros.some((m) => m.maestro === aliasMaestro)) {
             throw new Error("Tus credenciales ya firmaron este aporte.");
         }
 
@@ -161,41 +164,45 @@ export const ConsensoLogica = {
     /**
      * COMPILADOR FINAL: Construye el 'discoteca.json' inyectando el árbol de fragmentos cifrados.
      */
-    compilarGranDiscotecaComunal() {
+   compilarGranDiscotecaComunal() {
         let consagrados = this.obtenerDirectorioVirtual("consagrados-maestros");
-        
+
         const discotecaGlobal = {
             gremio: "Sinfonía Discoteca",
             nodo_emisor: "Consejo de Maestros de Miranda",
             ultima_sincronizacion_dht: new Date().toISOString(),
             total_activos_validados: consagrados.length,
-            catalogo_recursos: consagrados.map(c => {
+            catalogo_recursos: consagrados.map((c) => {
                 return {
-                    id_transaccion: c.id_aporte,
+                    id_transaccion: c.id_aporte || "contrib_desconocida",
                     status: "BLINDADO_Y_DISTRIBUIDO",
-                    
+
                     // CONTENEDOR ENCRIPTADO ÚNICO
-                    payload_bloqueado: c.payload_cifrado,
+                    payload_bloqueado: c.payload_cifrado || "",
 
                     // RESGUARDO DE SOBERANÍA REPARTIDA (SHAMIR)
                     // Para abrir la canción se necesitan mínimo 2 llaves del mapa
                     Boveda_Llaves_Shamir: {
-                        llave_nodo_A: c.boveda_fragmentos.fragmento_aprendiz,
-                        llave_nodo_B: c.boveda_fragmentos.fragmento_oficial_esperado,
-                        llave_nodo_C: c.boveda_fragmentos.fragmento_maestros_esperado
+                        llave_nodo_A: c.boveda_fragmentos?.fragmento_aprendiz || "",
+                        llave_nodo_B: c.boveda_fragmentos?.fragmento_oficial_esperado || "",
+                        llave_nodo_C: c.boveda_fragmentos?.fragmento_maestros_esperado || ""
                     },
 
+                    // ARBOL DE PRUEBAS CON ENCADENAMIENTO OPCIONAL TOTAL
                     Pruebas_Criptograficas_Validas: {
-                        origen_aprendiz: c.firmas_cadena.firma_aprendiz,
-                        auditoria_oficial: c.firmas_cadena.firma_oficial,
-                        consagracion_consejo: c.firmas_cadena.firmas_maestros.map(m => ({
-                            maestro: m.maestro,
-                            firma_pgp: m.firma
+                        origen_aprendiz: c.firmas_cadena?.firma_aprendiz || "",
+                        auditoria_oficial: c.firmas_cadena?.firma_oficial || "",
+                        // Evita que falle el .map si el array de maestros no se ha inicializado
+                        consagracion_consejo: (c.firmas_cadena?.firmas_maestros || []).map((m) => ({
+                            maestro: m?.maestro || "Maestro_Anonimo",
+                            firma_pgp: m?.firma || ""
                         }))
                     },
+                    
+                    // AUDITORÍA DEL PATIO PROTEGIDA
                     auditoria_fisica_patio: {
-                        oficial_auditor: c.auditoria_oficial.oficial_auditor,
-                        veredicto: c.auditoria_oficial.veredicto
+                        oficial_auditor: c.auditoria_oficial?.oficial_auditor || "Sin_Oficial",
+                        veredicto: c.auditoria_oficial?.veredicto || "No_Auditado"
                     }
                 };
             })
