@@ -112,14 +112,25 @@
                     const id = e.target.getAttribute("data-id");
                     itemSeleccionado = recursos.find(r => r.id_transaccion === id);
                     
-                    document.getElementById("mesaDesbloqueo").style.display = "block";
-                    monitor(`Activo [${id}] seleccionado. Dispuesto para inyección de quórum de llaves.`);
+                    monitor(`Activo [${id}] seleccionado. Consultando red de Faros automáticamente...`);
                     
-                    // Auto-relleno visual didáctico para agilizar las pruebas en el lab
-                    console.log("== DATOS DE AUTOFILTRADO DE COBREADO SHAMIR CORRIENDO EN RAM ==");
-                    console.log("Llave A:", itemSeleccionado.Boveda_Llaves_Shamir?.llave_nodo_A);
-                    console.log("Llave B:", itemSeleccionado.Boveda_Llaves_Shamir?.llave_nodo_B);
-                    console.log("Llave C:", itemSeleccionado.Boveda_Llaves_Shamir?.llave_nodo_C);
+                    // SIMULACIÓN DE CONSULTA DHT SILENCIOSA
+                    try {
+                        const baseLlaves = JSON.parse(localStorage.getItem("boveda_llaves_dht_privadas")) || {};
+                        const llavesDelActivo = baseLlaves[id];
+
+                        if (llavesDelActivo) {
+                            // El sistema escoge de forma autónoma la Llave A y la Llave B de la red distributed
+                            document.getElementById("fragmentoInputA").value = llavesDelActivo.nodo_A;
+                            document.getElementById("fragmentoInputB").value = llavesDelActivo.nodo_B;
+                            
+                            monitor(`🟢 <strong>Faros Sincronizados:</strong> Se recuperó el quórum de llaves automáticamente para el activo: ${id}. Listo para reproducir.`);
+                        } else {
+                            monitor("⚠️ Alerta: Este activo pertenece a una versión anterior sin tabla de distribución hash.", true);
+                        }
+                    } catch(err) {
+                        monitor("Fallo en la conexión simulada de la DHT.", true);
+                    }
                 });
             });
         }

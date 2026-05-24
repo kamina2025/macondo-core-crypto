@@ -166,8 +166,15 @@ export const ConsensoLogica = {
     /**
      * COMPILADOR FINAL: Construye el 'discoteca.json' inyectando el árbol de fragmentos cifrados.
      */
+   /**
+     * COMPILADOR DE DISTRIBUCIÓN REAL: Genera el catálogo público purgado de llaves
+     * y simula el despacho de los fragmentos Shamir a las bóvedas privadas correspondientes.
+     */
     compilarGranDiscotecaComunal() {
         let consagrados = this.obtenerDirectorioVirtual("consagrados-maestros");
+        
+        // Simulación de almacenamiento privado descentralizado (Fuera del JSON público)
+        let bovedaLlavesDistribuidas = {};
 
         const discotecaGlobal = {
             gremio: "Sinfonía Discoteca",
@@ -175,33 +182,34 @@ export const ConsensoLogica = {
             ultima_sincronizacion_dht: new Date().toISOString(),
             total_activos_validados: consagrados.length,
             catalogo_recursos: consagrados.map((c) => {
+                
+                // DESPACHO SEPARADO AUTOMÁTICO (Simulación de red P2P)
+                // Las llaves se guardan indexadas por el ID de la transacción en una tabla hash aislada
+                bovedaLlavesDistribuidas[c.id_aporte] = {
+                    nodo_A: c.boveda_fragmentos?.fragmento_aprendiz || "",
+                    nodo_B: c.boveda_fragmentos?.fragmento_oficial_esperado || "",
+                    nodo_C: c.boveda_fragmentos?.fragmento_maestros_esperado || ""
+                };
+
                 return {
                     id_transaccion: c.id_aporte || "contrib_desconocida",
                     status: "BLINDADO_Y_DISTRIBUIDO",
-
-                    // CONTENEDOR ENCRIPTADO ÚNICO
                     payload_bloqueado: c.payload_cifrado || "",
 
-                    // RESGUARDO DE SOBERANÍA REPARTIDA (SHAMIR)
-                    // Para abrir la canción se necesitan mínimo 2 llaves del mapa
-                    Boveda_Llaves_Shamir: {
-                        llave_nodo_A: c.boveda_fragmentos?.fragmento_aprendiz || "",
-                        llave_nodo_B: c.boveda_fragmentos?.fragmento_oficial_esperado || "",
-                        llave_nodo_C: c.boveda_fragmentos?.fragmento_maestros_esperado || ""
+                    // El JSON público ahora solo contiene la declaración del quórum necesario
+                    Requerimiento_Consenso: {
+                        umbral: "2 de 3",
+                        actores_llave: ["Aprendiz_Creador", "Oficial_Auditor", "Consejo_Maestros"]
                     },
 
-                    // ARBOL DE PRUEBAS CON ENCADENAMIENTO OPCIONAL TOTAL
                     Pruebas_Criptograficas_Validas: {
                         origen_aprendiz: c.firmas_cadena?.firma_aprendiz || "",
                         auditoria_oficial: c.firmas_cadena?.firma_oficial || "",
-                        // Evita que falle el .map si el array de maestros no se ha inicializado
                         consagracion_consejo: (c.firmas_cadena?.firmas_maestros || []).map((m) => ({
                             maestro: m?.maestro || "Maestro_Anonimo",
                             firma_pgp: m?.firma || ""
                         }))
                     },
-
-                    // AUDITORÍA DEL PATIO PROTEGIDA
                     auditoria_fisica_patio: {
                         oficial_auditor: c.auditoria_oficial?.oficial_auditor || "Sin_Oficial",
                         veredicto: c.auditoria_oficial?.veredicto || "No_Auditado"
@@ -209,6 +217,9 @@ export const ConsensoLogica = {
                 };
             })
         };
+
+        // Guardamos la tabla de llaves distribuidas en una memoria aislada de la Bóveda simulada
+        localStorage.setItem("boveda_llaves_dht_privadas", JSON.stringify(bovedaLlavesDistribuidas));
 
         return discotecaGlobal;
     }
