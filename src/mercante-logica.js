@@ -136,3 +136,38 @@ export const MercanteLogica = {
         };
     }
 };
+/**
+     * VALIDACIÓN Y QUEMA DE PIN: Verifica si un PIN es válido para el artefacto
+     * solicitado y lo marca como usado para evitar el doble gasto en el patio.
+     */
+    validarYConsumirPin(pinIngresado, artefactoDestino) {
+        let pinsActivos = this.obtenerBovedaMercante("pins_validos");
+        if (!pinsActivos.lista) pinsActivos.lista = [];
+
+        // Buscamos el PIN en la base de datos distribuida simulada
+        const tokenEncontrado = pinsActivos.lista.find(p => p.pin === pinIngresado.trim());
+
+        if (!tokenEncontrado) {
+            throw new Error("El PIN ingresado no existe o no ha sido emitido por un Mercante autorizado.");
+        }
+
+        if (tokenEncontrado.usado) {
+            throw new Error(`El PIN ya fue consumido el: ${new Date(tokenEncontrado.timestamp_consumo).toLocaleString()}`);
+        }
+
+        if (tokenEncontrado.artefacto.toLowerCase() !== artefactoDestino.toLowerCase()) {
+            throw new Error(`PIN incorrecto. Este token fue forjado exclusivamente para el artefacto: ${tokenEncontrado.artefacto}`);
+        }
+
+        // Quemamos el PIN en el registro para que no pueda ser reutilizado
+        tokenEncontrado.usado = true;
+        tokenEncontrado.timestamp_consumo = new Date().toISOString();
+
+        this.guardarBovedaMercante("pins_validos", pinsActivos);
+
+        return {
+            valido: true,
+            emitido_por: tokenEncontrado.emitido_por,
+            fecha_emision: tokenEncontrado.timestamp_emision
+        };
+    }
