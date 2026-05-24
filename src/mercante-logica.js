@@ -43,28 +43,57 @@ export const MercanteLogica = {
      * SISTEMA DE ACUMULACIÓN: Genera lealtad inyectando puntos en la cédula.
      * Regla base: 1 punto por cada 1,000 COP transaccionados.
      */
-    acumularPuntosIniciado(certificadoIniciado, valorTransaccion) {
-        const puntosA_Sumar = Math.floor(valorTransaccion / 1000);
-
-        // Aseguramos la existencia de TODO el objeto y sus sub-propiedades de un solo golpe
-        certificadoIniciado.registro_meritos_termodinamicos = certificadoIniciado.registro_meritos_termodinamicos || {};
+   /**
+     * FUNCIÓN AUXILIAR (NUEVA): Sella digitalmente el estado de méritos
+     * para evitar que el Iniciado altere sus puntos modificando el JSON a mano.
+     */
+    generarSelloSeguridad(certificado) {
+        const alias = certificado.metadata?.alias_custodio || "anonimo";
+        const puntos = certificado.registro_meritos_termodinamicos?.puntos_redencion || 0;
+        const subCadenaClave = certificado.certificado_actual?.pgp_public_key?.substring(30, 60) || "MACONDO_KEY";
         
+        // Creamos una cadena de verificación combinada única
+        const payloadSello = `${alias}|${puntos}|${subCadenaClave}`;
+        
+        // Generamos un hash Base64 simple simulando la firma criptográfica del Mercante
+        return btoa(payloadSello).substring(0, 32);
+    },
+
+    /**
+     * SISTEMA DE ACUMULACIÓN CON VERIFICACIÓN DE FIRMA
+     */
+    acumularPuntosIniciado(certificadoIniciado, valorTransaccion) {
+        // Inicialización estructural segura
+        certificadoIniciado.registro_meritos_termodinamicos = certificadoIniciado.registro_meritos_termodinamicos || {};
         if (certificadoIniciado.registro_meritos_termodinamicos.puntos_redencion === undefined) {
             certificadoIniciado.registro_meritos_termodinamicos.puntos_redencion = 0;
         }
-
-        // Aseguramos que el array de historial exista de manera infalible
         certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios = 
             certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios || [];
 
-        // Ahora la mutación en la RAM es 100% segura
+        // VERIFICACIÓN ANTES DE MUTAR: Si ya tiene un hash de consenso comercial previo, lo validamos
+        if (certificadoIniciado.registro_meritos_termodinamicos.ultimo_hash_consenso && 
+            certificadoIniciado.registro_meritos_termodinamicos.ultimo_hash_consenso !== "0x0000000000000000000000000000000000000000") {
+            
+            const selloCalculado = this.generarSelloSeguridad(certificadoIniciado);
+            if (certificadoIniciado.registro_meritos_termodinamicos.ultimo_hash_consenso !== selloCalculado) {
+                throw new Error("ALERTA DE SEGURIDAD: El balance de puntos en este Certificado ha sido alterado manualmente o la firma del último Mercante es inválida.");
+            }
+        }
+
+        // Operación en RAM
+        const puntosA_Sumar = Math.floor(valorTransaccion / 1000);
         certificadoIniciado.registro_meritos_termodinamicos.puntos_redencion += puntosA_Sumar;
+        
         certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios.push({
             tipo: "Acumulación por Intercambio",
             monto: valorTransaccion,
             puntos_ganados: puntosA_Sumar,
             fecha: new Date().toISOString()
         });
+
+        // RE-SELLADO: Inyectamos el sello inmutable simulando la firma OpenPGP del nodo comercial
+        certificadoIniciado.registro_meritos_termodinamicos.ultimo_hash_consenso = this.generarSelloSeguridad(certificadoIniciado);
 
         return certificadoIniciado;
     },
@@ -105,8 +134,21 @@ export const MercanteLogica = {
     /**
      * REDENCIÓN EFECTIVA: Aplica el descuento restando los puntos del certificado.
      */
+   /**
+     * REDENCIÓN EFECTIVA CON VERIFICACIÓN DE FIRMA
+     */
     redimirDescuentoCertificado(certificadoIniciado, tipoProducto, valorOriginal) {
-        const puntosActuales = certificadoIniciado.registro_meritos_termodinamicos?.puntos_redencion || 0;
+        certificadoIniciado.registro_meritos_termodinamicos = certificadoIniciado.registro_meritos_termodinamicos || {};
+        
+        // VERIFICACIÓN DE INTEGRIDAD ANTES DE APLICAR EL DESCUENTO
+        const selloCalculado = this.generarSelloSeguridad(certificadoIniciado);
+        if (certificadoIniciado.registro_meritos_termodinamicos.ultimo_hash_consenso && 
+            certificadoIniciado.registro_meritos_termodinamicos.ultimo_hash_consenso !== selloCalculado &&
+            certificadoIniciado.registro_meritos_termodinamicos.ultimo_hash_consenso !== "0x0000000000000000000000000000000000000000") {
+            throw new Error("ALERTA DE SEGURIDAD: Intento de fraude detectado. El linaje de puntos no coincide con la última firma del patio.");
+        }
+
+        const puntosActuales = certificadoIniciado.registro_meritos_termodinamicos.puntos_redencion || 0;
         const calculo = this.calcularDescuento(tipoProducto, valorOriginal, puntosActuales);
 
         if (calculo.error) throw new Error(calculo.error);
@@ -118,7 +160,9 @@ export const MercanteLogica = {
             certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios = [];
         }
 
+        // Deducimos puntos de forma legítima
         certificadoIniciado.registro_meritos_termodinamicos.puntos_redencion -= calculo.puntos_costo;
+        
         certificadoIniciado.registro_meritos_termodinamicos.historial_intercambios.push({
             tipo: "Descuento Redimido",
             producto: tipoProducto,
@@ -126,6 +170,9 @@ export const MercanteLogica = {
             ahorro_cop: calculo.descuento_cop,
             fecha: new Date().toISOString()
         });
+
+        // RE-SELLADO: Actualizamos la firma con el nuevo balance neto
+        certificadoIniciado.registro_meritos_termodinamicos.ultimo_hash_consenso = this.generarSelloSeguridad(certificadoIniciado);
 
         return {
             certificadoActualizado: certificadoIniciado,
